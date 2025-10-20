@@ -32,4 +32,23 @@ for botao in lista_botes:
     if "Assinatura" in botao.text: # aqui eu verifico o texto do botão
         botao.click()
         break
+
+# Selecionar uma aba específica
+abas = navegator.window_handles
+navegator.switch_to.window(abas[1])  # volta para a primeira aba
+
+# Navegar para um site diferente
+navegator.get("https://www.hashtagtreinamentos.com/curso-python")
+
+# Diminuir o zoom da página para 75%
+navegator.execute_script("document.body.style.zoom='75%'")
+
+# Escrever em um campo de texto
+navegator.find_element(By.ID, "firstname").send_keys("Thiago")
+navegator.find_element(By.ID, "email").send_keys("teste@yahoo.com.br")
+navegator.find_element(By.ID, "phone").send_keys("85999999999")
+
+# Enviando o formulário
+navegator.find_element(By.ID, "_form_2475_submit").click()
+
 time.sleep(10)
