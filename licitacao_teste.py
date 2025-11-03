@@ -103,3 +103,4 @@ ver_resultados = navegator.find_element(By.ID, "formularioDeCrud:grupoItensCoEPD
 ver_resultados.click()
 
 time.sleep(30)
+
