@@ -1,32 +1,66 @@
+import requests
+from bs4 import BeautifulSoup
 from selenium import webdriver
+from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import Select
+import pandas as pd
 import time
 
-# Open a new Chrome browser instance
-navegator = webdriver.Chrome()
+response = requests.get("http://s2gpr.sefaz.ce.gov.br/licita-web/paginas/licita/PublicacaoList.seam") # Realiza a requisição GET para a URL especificada
 
-# Open the target webpage
-navegator.get("https://www.hashtagtreinamentos.com/")
+print("Status Code:", response.status_code)
+print("*************************************")
+print("Cabeçalho:", response.headers)
+print("*************************************")
+print("Conteúdo:", response.text)  # Imprime os primeiros 500 caracteres do conteúdo
+print("*************************************")
 
-# Put the navegator in maximized mode
-navegator.maximize_window()
+print(response.content) # Imprime o conteúdo bruto da resposta
+print(type(response.content)) # Imprime o tipo do conteúdo
 
-# Close popup
-botao_fechar = WebDriverWait(navegator, 10).until(
-    EC.element_to_be_clickable((By.ID, "botaoPopupFechar")))
-botao_fechar.click()
+conteudo_bruto = response.content
 
-# reduzir zoom para 50% pois o botão não estava aparecendona tela
-WebDriverWait(navegator, 10).until(lambda d: d.execute_script("return document.readyState") == "complete")
-navegator.execute_script("document.body.style.zoom='50%'")
+site = BeautifulSoup(conteudo_bruto, 'html.parser') # Analisa o conteúdo bruto com BeautifulSoup
+print(site.prettify()) # Imprime o HTML formatado
 
-# Select a element by its class name
-# O find_element seleciona o primeiro elemento encontrado
-element = navegator.find_element(By.CLASS_NAME, "botao-verde") 
-if element.is_displayed():
-    WebDriverWait(navegator, 2).until(EC.element_to_be_clickable((By.CLASS_NAME, "botao-verde")))
-element.click()
 
-time.sleep(10)
+def iniciar_navegador():
+    navegador = webdriver.Chrome()
+    navegador.get("http://s2gpr.sefaz.ce.gov.br/licita-web/paginas/licita/PublicacaoList.seam")
+    return navegador
+
+navegador = iniciar_navegador()
+
+# Substitua 'nome-da-classe' pelo nome da classe que deseja procurar
+visualizar = navegador.find_elements(By.CSS_SELECTOR, ".rich-table-row.rich-table-firstrow.linhaImpar")
+# for elemento in visualizar:
+    # print(elemento.text)
+
+
+# Extração de dados da tabela
+dados = []
+for linha in site.select("table.rich-table tr.rich-table-row"):
+    colunas = linha.find_all("td") # Obtém todas as colunas da linha
+    if len(colunas) >= 8:
+        registro = {
+            "numero": colunas[1].get_text(strip=True),
+            "status": colunas[2].get_text(strip=True),
+            "codigo": colunas[3].get_text(strip=True),
+            "descricao": colunas[4].get_text(strip=True),
+            "orgao": colunas[5].get_text(strip=True),
+            "modalidade": colunas[6].get_text(strip=True),
+            "periodo": colunas[7].get_text(strip=True),
+        }
+        dados.append(registro)
+
+df = pd.DataFrame(dados, columns=["numero", "status", "codigo", "descricao", "orgao", "modalidade", "periodo"])
+print(df)
+
+df.to_csv("licitacoes.csv", index=False, encoding="utf-8-sig") # Salva os dados em um arquivo CSV
+df.to_excel("licitacoes.xlsx", index=False) # O false é para não salvar o índice como uma coluna no arquivo Excel
+""" for d in dados:
+    print(d) """
+
+time.sleep(5)
