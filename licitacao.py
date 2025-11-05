@@ -68,7 +68,7 @@ time.sleep(10)
 # Clicar no link da primeira licitação
 primeira_licitacao = navegator.find_element(By.ID, "formularioDeCrud:pagedDataTable:397177:j_id429")
 if primeira_licitacao.is_displayed():
-    WebDriverWait(navegator, 2).until(EC.element_to_be_clickable((By.ID,
+    WebDriverWait(navegator, 20).until(EC.element_to_be_clickable((By.ID,
                                       "formularioDeCrud:pagedDataTable:397177:j_id429")))
     primeira_licitacao.click()
 time.sleep(3)
@@ -76,7 +76,7 @@ time.sleep(3)
 # Vsualizar propostas
 visu_proposta = navegator.find_element(By.ID, "formularioDeCrud:visualizarSuperior")
 if visu_proposta.is_displayed():
-    WebDriverWait(navegator, 2).until(EC.element_to_be_clickable((By.ID,
+    WebDriverWait(navegator, 20).until(EC.element_to_be_clickable((By.ID,
                                       "formularioDeCrud:visualizarSuperior")))
     visu_proposta.click()
 time.sleep(3)
@@ -84,9 +84,5 @@ time.sleep(3)
 # Ver resultados
 ver_resultados = navegator.find_element(By.ID, "formularioDeCrud:grupoItensCoEPDataTable:0:j_id294")
 ver_resultados.click()
-
-# Guardar valores numa variável para uso futuro
-valores = navegator.find_element(By.ID, "formularioDeCrud:itensCoEPDataTable:0:valorItem")
-print("Valor do item:", valores.text)
 
 time.sleep(30)

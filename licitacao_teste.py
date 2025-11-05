@@ -3,17 +3,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select
-import psycopg2
+from bs4 import BeautifulSoup
+import pandas as pd
 import time
-
-conn = psycopg2.connect(
-    host="localhost",
-    port=5432,
-    database="licitacoes",
-    user="postgres",
-    password="postgres"
-)
-cursor = conn.cursor()
 
 def iniciar_navegador():
     navegador = webdriver.Chrome()
@@ -75,32 +67,53 @@ WebDriverWait(navegator, 30).until(lambda d: d.execute_script(
 ))
 time.sleep(10)
 
-# Clicar no link da primeira licitação
-primeira_licitacao = navegator.find_elements(By.CLASS_NAME, "rich-table-cell")
-WebDriverWait(navegator, 20).until(EC.visibility_of_all_elements_located((By.CLASS_NAME,"rich-table-cell")))
-celulas = navegator.find_elements(By.CLASS_NAME, "rich-table-cell")
-print(f"Número de células encontradas: {len(celulas)}")
+dados_totais = []
+max_paginas = 20
+pagina_atual = 0
 
-for num in range(len(celulas)):
-    print(f"Célula {num}: {celulas[num].text}")
+while pagina_atual < max_paginas:
+    WebDriverWait(navegator, 30).until(
+        EC.invisibility_of_element_located((By.ID, "formularioDeCrud:j_id396"))
+    )
+    site = BeautifulSoup(navegator.page_source, 'html.parser') # Analisa o conteúdo da página atual com BeautifulSoup
 
-if celulas:
-    WebDriverWait(navegator,20).until(EC.element_to_be_clickable(celulas[70]))
-    navegator.execute_script("arguments[0].click();", celulas[70])
+    for licitacao in site.select("table.rich-table tr.rich-table-row"):
+        colunas = licitacao.find_all("td")
+        if len(colunas) >= 8:
+            registro = {
+                "numero": colunas[1].get_text(strip=True),
+                "status": colunas[2].get_text(strip=True),
+                "codigo": colunas[3].get_text(strip=True),
+                "descricao": colunas[4].get_text(strip=True),
+                "orgao": colunas[5].get_text(strip=True),
+                "modalidade": colunas[6].get_text(strip=True),
+                "periodo": colunas[7].get_text(strip=True),
+            }
+            dados_totais.append(registro)
+            print(dados_totais)
+    pagina_atual += 1
+    try:
+        botao_proximo = navegator.find_element(
+            By.XPATH, "//td[contains(@class, 'rich-datascr-button') and contains(., '»')]"
+        )
 
-time.sleep(10)
+        WebDriverWait(navegator, 30).until(
+            EC.invisibility_of_element_located((By.ID, "formularioDeCrud:j_id396"))
+        )
 
-# Vsualizar propostas
-visu_proposta = navegator.find_element(By.ID, "formularioDeCrud:visualizarSuperior")
-if visu_proposta.is_displayed():
-    WebDriverWait(navegator, 2).until(EC.element_to_be_clickable((By.ID,
-                                      "formularioDeCrud:visualizarSuperior")))
-    visu_proposta.click()
-time.sleep(3) 
+        # Verifica se o botão está desabilitado
+        if "rich-datascr-button-dsbld" in botao_proximo.get_attribute("class"):
+            print("Fim da paginação.")
+            break
 
-# Ver resultados
-ver_resultados = navegator.find_element(By.ID, "formularioDeCrud:grupoItensCoEPDataTable:0:j_id294")
-ver_resultados.click()
+        # Clica na próxima página
+        navegator.execute_script("arguments[0].click();", botao_proximo)
 
-time.sleep(30)
+    except Exception as e:
+        print("Não foi possível encontrar o botão de próxima página:", e)
+        break
+df = pd.DataFrame(dados_totais, columns=["numero", "status", "codigo", "descricao", "orgao", "modalidade", "periodo"])
+df.to_excel("licitacoes.xlsx", index=False) # O false é para não salvar o índice como uma coluna no arquivo Excel
 
+# Exibe a quantidade total de registros coletados
+print(f"Total de registros coletados: {len(dados_totais)}")
