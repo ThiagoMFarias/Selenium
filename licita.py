@@ -147,12 +147,10 @@ select.select_by_value("1104")
 time.sleep(2)
 
 # Preencher tipo de aquisição
-while True:
-    WebDriverWait(navegator, 30).until(EC.invisibility_of_element_located((By.ID, "formularioDeCrud:j_id396")))
-    tipo = navegator.find_element(By.ID, "formularioDeCrud:tipoAquisicaoDecoration:tipoAquisicao")
-    select = Select(tipo)
-    select.select_by_value("1199")
-    break
+WebDriverWait(navegator, 30).until(EC.invisibility_of_element_located((By.ID, "formularioDeCrud:j_id396")))
+tipo = navegator.find_element(By.ID, "formularioDeCrud:tipoAquisicaoDecoration:tipoAquisicao")
+select = Select(tipo)
+select.select_by_value("1199")
 
 # Tipo de regime
 while True:
@@ -162,13 +160,11 @@ while True:
     break
 
 # Sistemática de aquisição
-while True:
-    WebDriverWait(navegator, 30).until(EC.invisibility_of_element_located((By.ID, "formularioDeCrud:j_id396")))
-    sistematica = navegator.find_element(By.ID, "formularioDeCrud:sistematicaAquisicaoDecoration:sistAquisicao")
-    select = Select(sistematica)
-    select.select_by_value("1124")
-    time.sleep(1)
-    break
+sistematica = navegator.find_element(By.ID, "formularioDeCrud:sistematicaAquisicaoDecoration:sistAquisicao")
+select = Select(sistematica)
+select.select_by_value("1124")
+time.sleep(1)
+    
 
 # Forma de aquisição
 while True:
@@ -198,7 +194,7 @@ while True:
 navegator.execute_script("window._selenium_active_requests = 0;")  # Inicializa a variável para rastrear requisições ativas no contexto da página
 botao_buscar = navegator.find_element(By.ID, "formularioDeCrud:pesquisar")
 botao_buscar.click()
-time.sleep(10)
+time.sleep(3)
 
 # Selecionar a primeira licitação da lista
 while True:
@@ -213,4 +209,43 @@ visu_proposta = navegator.find_element(By.ID, "formularioDeCrud:visualizarSuperi
 if visu_proposta.is_displayed():
     WebDriverWait(navegator, 20).until(EC.element_to_be_clickable((By.ID,"formularioDeCrud:visualizarSuperior")))
     visu_proposta.click()
+else:
+    print("Elemento 'Visualizar Propostas' não está visível.")
 time.sleep(3)
+
+# Expandir resultados
+while True:
+    #WebDriverWait(navegator, 30).until(EC.invisibility_of_element_located((By.ID, "formularioDeCrud:j_id")))
+    ver_resultados = navegator.find_element(By.ID, "formularioDeCrud:grupoItensCoEPDataTable:0:j_id294")
+    ver_resultados.click()
+    break
+time.sleep(3)
+site = BeautifulSoup(navegator.page_source, 'html.parser') # Analisa o conteúdo da página atual com BeautifulSoup
+
+dados_totais = []
+
+# Localiza o tbody da tabela desejada pelo ID específico
+tabela_itens = site.find("tbody", id="formularioDeCrud:grupoItensCoEPDataTable:0:itensGrupoListAction:tb")
+
+for linha in tabela_itens.select("tr.rich-table-row"):
+    colunas = linha.find_all("td")
+    
+    # Garante que só linhas completas (com as 10 colunas) sejam processadas
+    if len(colunas) >= 10:
+        registro = {
+            "item": colunas[0].get_text(strip=True),
+            "descricao": colunas[1].get_text(strip=True),
+            "fornecedor": colunas[2].get_text(strip=True),
+            "quantidade": colunas[3].get_text(strip=True),
+            "valor_unitario": colunas[4].get_text(strip=True),
+            "valor_total": colunas[5].get_text(strip=True),
+            "melhor_lance": colunas[6].get_text(strip=True),
+            "total_melhor_lance": colunas[7].get_text(strip=True),
+            "marca": colunas[8].get_text(strip=True),
+        }
+        dados_totais.append(registro)
+
+df = pd.DataFrame(dados_totais, columns=["item", "descricao", "fornecedor", "quantidade", "valor_unitario", "valor_total", "melhor_lance", "total_melhor_lance", "marca"])
+df.to_excel("licitacoes.xlsx", index=False) # O false é para não salvar o índice como uma coluna no arquivo Excel
+print(dados_totais)
+time.sleep(5)
