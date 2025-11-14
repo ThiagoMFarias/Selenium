@@ -196,56 +196,67 @@ botao_buscar = navegator.find_element(By.ID, "formularioDeCrud:pesquisar")
 botao_buscar.click()
 time.sleep(3)
 
-# Selecionar a primeira licitação da lista
-while True:
-    WebDriverWait(navegator, 30).until(EC.invisibility_of_element_located((By.ID, "formularioDeCrud:j_id396")))
-    linhas = navegator.find_elements(By.CSS_SELECTOR, "tr.linhaImpar, tr.linhaPar")
-    linhas[0].click()
-    time.sleep(3)
-    break
+# Pega todas as linhas das licitações encontradas
+linhas = navegator.find_elements(By.CSS_SELECTOR, "tr.linhaImpar, tr.linhaPar")
 
-# Vsualizar propostas
+# Analisa o conteúdo da página atual com BeautifulSoup
+site = BeautifulSoup(navegator.page_source, 'html.parser')
+
+# Botão de visualizar proposta
 visu_proposta = navegator.find_element(By.ID, "formularioDeCrud:visualizarSuperior")
-if visu_proposta.is_displayed():
-    WebDriverWait(navegator, 20).until(EC.element_to_be_clickable((By.ID,"formularioDeCrud:visualizarSuperior")))
-    visu_proposta.click()
-else:
-    print("Elemento 'Visualizar Propostas' não está visível.")
-time.sleep(3)
 
-# Expandir resultados
-while True:
-    #WebDriverWait(navegator, 30).until(EC.invisibility_of_element_located((By.ID, "formularioDeCrud:j_id")))
-    ver_resultados = navegator.find_element(By.ID, "formularioDeCrud:grupoItensCoEPDataTable:0:j_id294")
-    ver_resultados.click()
-    break
-time.sleep(3)
-site = BeautifulSoup(navegator.page_source, 'html.parser') # Analisa o conteúdo da página atual com BeautifulSoup
 
 dados_totais = []
+for licitacao in range(len(linhas)):
+    linhas = navegator.find_elements(By.CSS_SELECTOR, "tr.linhaImpar, tr.linhaPar")
+    linhas[licitacao].click()
+    time.sleep(3)
+    visu_proposta = navegator.find_element(By.ID, "formularioDeCrud:visualizarSuperior")
+    visu_proposta.click()
+    time.sleep(5)
+    # Expandir resultados
+    ver_resultados = WebDriverWait(navegator, 20).until(EC.element_to_be_clickable((By.ID, "formularioDeCrud:grupoItensCoEPDataTable:0:j_id294")))
+    ver_resultados.click()
+    time.sleep(10)
 
-# Localiza o tbody da tabela desejada pelo ID específico
-tabela_itens = site.find("tbody", id="formularioDeCrud:grupoItensCoEPDataTable:0:itensGrupoListAction:tb")
+    # Localiza o tbody da tabela desejada pelo ID específico
+    site = BeautifulSoup(navegator.page_source, 'html.parser')
+    tabela_itens = site.find("tbody", id="formularioDeCrud:grupoItensCoEPDataTable:0:itensGrupoListAction:tb")
 
-for linha in tabela_itens.select("tr.rich-table-row"):
-    colunas = linha.find_all("td")
+    for linha in tabela_itens.select("tr.rich-table-row"):
+        colunas = linha.find_all("td")
+        
+        # Garante que só linhas completas (com as 10 colunas) sejam processadas
+        if len(colunas) >= 10:
+            registro = {
+                "item": colunas[0].get_text(strip=True),
+                "descricao": colunas[1].get_text(strip=True),
+                "fornecedor": colunas[2].get_text(strip=True),
+                "quantidade": colunas[3].get_text(strip=True),
+                "valor_unitario": colunas[4].get_text(strip=True),
+                "valor_total": colunas[5].get_text(strip=True),
+                "melhor_lance": colunas[6].get_text(strip=True),
+                "total_melhor_lance": colunas[7].get_text(strip=True),
+                "marca": colunas[8].get_text(strip=True),
+            }
+            dados_totais.append(registro)
+
+    # retornar para a página inicial de licitações
+    retornar = navegator.find_element(By.CSS_SELECTOR, "input.sec.retornarPesquisa")
+    retornar.click()
+    time.sleep(5)
+    navegator.refresh()
+    WebDriverWait(navegator, 20).until(EC.visibility_of_element_located((By.CSS_SELECTOR, "tr.linhaImpar, tr.linhaPar")))
     
-    # Garante que só linhas completas (com as 10 colunas) sejam processadas
-    if len(colunas) >= 10:
-        registro = {
-            "item": colunas[0].get_text(strip=True),
-            "descricao": colunas[1].get_text(strip=True),
-            "fornecedor": colunas[2].get_text(strip=True),
-            "quantidade": colunas[3].get_text(strip=True),
-            "valor_unitario": colunas[4].get_text(strip=True),
-            "valor_total": colunas[5].get_text(strip=True),
-            "melhor_lance": colunas[6].get_text(strip=True),
-            "total_melhor_lance": colunas[7].get_text(strip=True),
-            "marca": colunas[8].get_text(strip=True),
-        }
-        dados_totais.append(registro)
+
+
+
+
+
+
 
 df = pd.DataFrame(dados_totais, columns=["item", "descricao", "fornecedor", "quantidade", "valor_unitario", "valor_total", "melhor_lance", "total_melhor_lance", "marca"])
 df.to_excel("licitacoes.xlsx", index=False) # O false é para não salvar o índice como uma coluna no arquivo Excel
 print(dados_totais)
-time.sleep(5)
+time.sleep(30) 
+ 
