@@ -22,34 +22,34 @@ def aplicar_filtros(nav):
     time.sleep(2)
 
     # Tipo de aquisição
-    WebDriverWait(nav, 30).until(EC.invisibility_of_element_located((By.ID, "formularioDeCrud:j_id396")))
+    WebDriverWait(nav, 60).until(EC.invisibility_of_element_located((By.ID, "formularioDeCrud:j_id396")))
     tipo = nav.find_element(By.ID, "formularioDeCrud:tipoAquisicaoDecoration:tipoAquisicao")
     Select(tipo).select_by_value("1206")
 
     # Tipo de regime
-    regime = WebDriverWait(nav, 30).until(
+    regime = WebDriverWait(nav, 60).until(
         EC.element_to_be_clickable((By.ID, "formularioDeCrud:j_id259:j_id273:1"))
     )
     regime.click()
 
     # Sistemática de aquisição
-    WebDriverWait(nav, 30).until(EC.invisibility_of_element_located((By.ID, "formularioDeCrud:j_id396")))
+    WebDriverWait(nav, 60).until(EC.invisibility_of_element_located((By.ID, "formularioDeCrud:j_id396")))
     sistematica = nav.find_element(By.ID, "formularioDeCrud:sistematicaAquisicaoDecoration:sistAquisicao")
     Select(sistematica).select_by_value("1131")
     time.sleep(2)
 
     # Forma de aquisição
-    WebDriverWait(nav, 30).until(EC.invisibility_of_element_located((By.ID, "formularioDeCrud:j_id396")))
+    WebDriverWait(nav, 60).until(EC.invisibility_of_element_located((By.ID, "formularioDeCrud:j_id396")))
     forma = nav.find_element(By.ID, "formularioDeCrud:formaAquisicaoDecoration:formaAquisicao")
     Select(forma).select_by_value("1236")
 
     # Status da publicação
-    WebDriverWait(nav, 30).until(EC.invisibility_of_element_located((By.ID, "formularioDeCrud:j_id396")))
+    WebDriverWait(nav, 60).until(EC.invisibility_of_element_located((By.ID, "formularioDeCrud:j_id396")))
     status = nav.find_element(By.ID, "formularioDeCrud:statusDecoration:status")
     Select(status).select_by_value("FINALIZADA_ELETRONICA")
 
     # Região
-    WebDriverWait(nav, 30).until(EC.invisibility_of_element_located((By.ID, "formularioDeCrud:j_id396")))
+    WebDriverWait(nav, 60).until(EC.invisibility_of_element_located((By.ID, "formularioDeCrud:j_id396")))
     regiao = nav.find_element(By.ID, "formularioDeCrud:microRegiaoDecoration:microRegiao")
     Select(regiao).select_by_value("1162")
 
@@ -71,14 +71,17 @@ def esperar_overlays(nav):
 
 def avancar_uma_pagina(nav):
     """Avança apenas uma página clicando no botão próximo."""
+    time.sleep(1)
     esperar_overlays(nav)
+
     botao_proximo = nav.find_element(
         By.XPATH, "//td[contains(@class, 'rich-datascr-button') and contains(., '»') and not(contains(., '»»'))]"
     )
     if "rich-datascr-button-dsbld" in botao_proximo.get_attribute("class"):
         raise Exception("Botão próximo está desabilitado.")
+
     nav.execute_script("arguments[0].click();", botao_proximo)
-    time.sleep(2)
+    time.sleep(1)
     esperar_overlays(nav)
 
 
@@ -89,18 +92,18 @@ def navegar_para_pagina(nav, numero_pagina):
         return
 
     for _ in range(numero_pagina - 1):
+        time.sleep(1)
         esperar_overlays(nav)
 
         botao_proximo = nav.find_element(
             By.XPATH, "//td[contains(@class, 'rich-datascr-button') and contains(., '»') and not(contains(., '»»'))]"
         )
 
-        # Verifica se o botão está desabilitado — página não existe
         if "rich-datascr-button-dsbld" in botao_proximo.get_attribute("class"):
             raise Exception("Página não existe — botão próximo está desabilitado.")
 
         nav.execute_script("arguments[0].click();", botao_proximo)
-        time.sleep(2)
+        time.sleep(1)
         esperar_overlays(nav)
 
     # Confirma que chegou na página certa
@@ -177,7 +180,7 @@ dados_totais = []
 # Abre navegador principal, aplica filtros e navega direto para a pagina_inicio
 nav_principal = iniciar_navegador()
 aplicar_filtros(nav_principal)
-navegar_para_pagina(nav_principal, pagina_inicio)  # vai direto para a página inicial escolhida
+navegar_para_pagina(nav_principal, pagina_inicio)
 
 for pagina_atual in range(pagina_inicio, pagina_fim + 1):
     print(f"\n=== Processando página {pagina_atual}/{pagina_fim} ===")
@@ -208,14 +211,14 @@ for pagina_atual in range(pagina_inicio, pagina_fim + 1):
 
             linhas_nav = nav.find_elements(By.CSS_SELECTOR, "tr.linhaImpar, tr.linhaPar")
             linhas_nav[indice].click()
-            time.sleep(3)
+            time.sleep(2)
 
             # Visualizar proposta
             visu_proposta = WebDriverWait(nav, 20).until(
                 EC.element_to_be_clickable((By.ID, "formularioDeCrud:visualizarSuperior"))
             )
             visu_proposta.click()
-            time.sleep(5)
+            time.sleep(3)
 
             # Tentar expandir itens (só existe quando os itens estão recolhidos)
             try:
@@ -225,7 +228,14 @@ for pagina_atual in range(pagina_inicio, pagina_fim + 1):
                 ver_resultados.click()
                 time.sleep(10)
             except:
-                print("     Botão expandir não encontrado, itens já visíveis.")
+                print("     Botão expandir não encontrado, verificando tabela diretamente...")
+                site_check = BeautifulSoup(nav.page_source, 'html.parser')
+                tbodys_check = site_check.find_all("tbody", id=lambda x: x and "itensGrupoListAction:tb" in x)
+                if not tbodys_check:
+                    print("     Nenhuma tabela encontrada, pulando licitação.")
+                    nav.quit()
+                    continue
+                print(f"     {len(tbodys_check)} tabela(s) já visível(is), capturando dados...")
                 time.sleep(3)
 
             # Scraping dos itens

@@ -143,26 +143,25 @@ print("Navegador iniciado e página carregada.")
 # Preencher o campo "Natureza da Aquisição"
 natureza = navegator.find_element(By.ID, "formularioDeCrud:naturezaAquisicaoDecoration:naturezaAquisicao")
 select = Select(natureza)
-select.select_by_value("1104")
+select.select_by_value("1110")
 time.sleep(2)
 
 # Preencher tipo de aquisição
-WebDriverWait(navegator, 30).until(EC.invisibility_of_element_located((By.ID, "formularioDeCrud:j_id396")))
+WebDriverWait(navegator, 30).until(EC.invisibility_of_element_located((By.ID, "formularioDeCrud:j_id396"))) # j_id396 é o ID do elemento de carregamento, garantindo que a página esteja pronta antes de interagir com o próximo campo
 tipo = navegator.find_element(By.ID, "formularioDeCrud:tipoAquisicaoDecoration:tipoAquisicao")
 select = Select(tipo)
-select.select_by_value("1199")
+select.select_by_value("1205")
 
 # Tipo de regime
 while True:
-    WebDriverWait(navegator, 30).until(EC.invisibility_of_element_located((By.ID, "formularioDeCrud:j_id396")))
-    regime = navegator.find_element(By.ID, "formularioDeCrud:j_id260:j_id274:1")
+    regime = WebDriverWait(navegator, 30).until(    EC.element_to_be_clickable((By.ID, "formularioDeCrud:j_id259:j_id273:1")))
     regime.click()
     break
 
 # Sistemática de aquisição
 sistematica = navegator.find_element(By.ID, "formularioDeCrud:sistematicaAquisicaoDecoration:sistAquisicao")
 select = Select(sistematica)
-select.select_by_value("1124")
+select.select_by_value("1130")
 time.sleep(1)
     
 
@@ -171,7 +170,7 @@ while True:
     forma = navegator.find_element(By.ID, "formularioDeCrud:formaAquisicaoDecoration:formaAquisicao")
     select = Select(forma)
     WebDriverWait(navegator, 30).until(EC.invisibility_of_element_located((By.ID, "formularioDeCrud:j_id396")))
-    select.select_by_value("1229")
+    select.select_by_value("1235")
     break
 
 # Status da publicação
@@ -187,7 +186,7 @@ while True:
     WebDriverWait(navegator, 30).until(EC.invisibility_of_element_located((By.ID, "formularioDeCrud:j_id396")))
     regiao = navegator.find_element(By.ID, "formularioDeCrud:microRegiaoDecoration:microRegiao")
     select = Select(regiao)
-    select.select_by_value("1155")
+    select.select_by_value("1161")
     break
 
 # Clicar no botão de buscar
@@ -215,7 +214,7 @@ for licitacao in range(len(linhas)):
     visu_proposta.click()
     time.sleep(5)
     # Expandir resultados
-    ver_resultados = WebDriverWait(navegator, 20).until(EC.element_to_be_clickable((By.ID, "formularioDeCrud:grupoItensCoEPDataTable:0:j_id294")))
+    ver_resultados = WebDriverWait(navegator, 20).until(EC.element_to_be_clickable((By.ID, "formularioDeCrud:grupoItensCoEPDataTable:0:j_id293")))
     ver_resultados.click()
     time.sleep(10)
 
@@ -245,7 +244,7 @@ for licitacao in range(len(linhas)):
     retornar = navegator.find_element(By.CSS_SELECTOR, "input.sec.retornarPesquisa")
     retornar.click()
     time.sleep(5)
-    navegator.refresh()
+    
     WebDriverWait(navegator, 20).until(EC.visibility_of_element_located((By.CSS_SELECTOR, "tr.linhaImpar, tr.linhaPar")))
     
 

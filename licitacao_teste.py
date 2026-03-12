@@ -1,3 +1,5 @@
+# Esse código pega todas as lcitações de forma global. 
+
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -19,30 +21,30 @@ print("Navegador iniciado e página carregada.")
 # Preencher o campo "Natureza da Aquisição"
 natureza = navegator.find_element(By.ID, "formularioDeCrud:naturezaAquisicaoDecoration:naturezaAquisicao")
 select = Select(natureza)
-select.select_by_value("1104")
+select.select_by_value("1110")
 time.sleep(2)
 
 # Preencher tipo de aquisição
 tipo = navegator.find_element(By.ID, "formularioDeCrud:tipoAquisicaoDecoration:tipoAquisicao")
 select = Select(tipo)
-select.select_by_value("1199")
+select.select_by_value("1205")
 time.sleep(1)
 
 # Tipo de regime
-regime = navegator.find_element(By.ID, "formularioDeCrud:j_id260:j_id274:1")
+regime = navegator.find_element(By.ID, "formularioDeCrud:j_id259:j_id273:1")
 regime.click()
 time.sleep(1)
 
 # Sistemática de aquisição
 sistematica = navegator.find_element(By.ID, "formularioDeCrud:sistematicaAquisicaoDecoration:sistAquisicao")
 select = Select(sistematica)
-select.select_by_value("1124")
+select.select_by_value("1130")
 time.sleep(1)
 
 # Forma de aquisição
 forma = navegator.find_element(By.ID, "formularioDeCrud:formaAquisicaoDecoration:formaAquisicao")
 select = Select(forma)
-select.select_by_value("1229")
+select.select_by_value("1235")
 time.sleep(1)
 
 # Status da publicação
@@ -53,7 +55,7 @@ select.select_by_value("FINALIZADA_ELETRONICA")
 # Região
 regiao = navegator.find_element(By.ID, "formularioDeCrud:microRegiaoDecoration:microRegiao")
 select = Select(regiao)
-select.select_by_value("1155")
+select.select_by_value("1161")
 time.sleep(1)
 
 # Clicar no botão de buscar
@@ -68,7 +70,7 @@ WebDriverWait(navegator, 30).until(lambda d: d.execute_script(
 time.sleep(10)
 
 dados_totais = []
-max_paginas = 20
+max_paginas = 200
 pagina_atual = 0
 
 while pagina_atual < max_paginas:
