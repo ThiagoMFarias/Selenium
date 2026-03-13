@@ -176,7 +176,7 @@ def scraping_licitacao(nav):
 
 
 # ─── ESCOLHA DO INTERVALO ────────────────────────────────────────────────────
-
+# Início do programa: pede para o usuário escolher o intervalo de páginas a ser coletado, validando se as páginas existem antes de iniciar o scraping.
 print("=== Configuração do intervalo de páginas ===")
 pagina_inicio = int(input("Página inicial: "))
 pagina_fim = int(input("Página final: "))
