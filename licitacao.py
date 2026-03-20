@@ -87,27 +87,33 @@ def pagina_atual_numero(nav):
 
 def avancar_uma_pagina(nav):
     """Avança apenas uma página e espera o número da página mudar."""
-    # Espera as linhas da tabela estarem presentes — prova real de que a página está pronta
+    from selenium.webdriver.common.action_chains import ActionChains
+
+    # Espera as linhas da tabela estarem presentes
     WebDriverWait(nav, 60).until(
         EC.presence_of_element_located((By.CSS_SELECTOR, "tr.linhaImpar, tr.linhaPar"))
     )
-
-    # Espera o overlay j_id18 sumir antes de tentar clicar
-    WebDriverWait(nav, 60).until(
-        EC.invisibility_of_element_located((By.ID, "j_id18"))
-    )
+    time.sleep(2)
 
     pagina_antes = pagina_atual_numero(nav)
+    print(f"     [avancar] Página atual antes do clique: {pagina_antes}")
 
-    # Espera o botão próximo estar clicável
     botao_proximo = WebDriverWait(nav, 60).until(
-        EC.element_to_be_clickable((By.XPATH, "//td[contains(@class, 'rich-datascr-button') and contains(., '»') and not(contains(., '»»'))]"))
+        EC.presence_of_element_located((By.XPATH, "//td[contains(@class, 'rich-datascr-button') and contains(., '»') and not(contains(., '»»'))]"))
     )
     if "rich-datascr-button-dsbld" in botao_proximo.get_attribute("class"):
         raise Exception("Botão próximo está desabilitado.")
 
-    nav.execute_script("arguments[0].click();", botao_proximo)
-    time.sleep(3)  # dá tempo ao site processar o clique
+    # Scroll até o botão para garantir visibilidade
+    nav.execute_script("arguments[0].scrollIntoView(true);", botao_proximo)
+    time.sleep(1)
+
+    # Tenta clicar via ActionChains
+    ActionChains(nav).move_to_element(botao_proximo).click().perform()
+    time.sleep(3)
+
+    pagina_depois = pagina_atual_numero(nav)
+    print(f"     [avancar] Página após o clique: {pagina_depois}")
 
     # Espera chegar exatamente na página seguinte
     pagina_esperada = pagina_antes + 1
@@ -240,6 +246,8 @@ for pagina_atual in range(pagina_inicio, pagina_fim + 1):
         avancar_uma_pagina(nav_principal)
 
     linhas = nav_principal.find_elements(By.CSS_SELECTOR, "tr.linhaImpar, tr.linhaPar")
+    # Ordena as linhas pela posição vertical na página
+    linhas = sorted(linhas, key=lambda el: el.location['y'])
     total_linhas = len(linhas)
 
     print(f"Licitações encontradas na página {pagina_atual}: {total_linhas}")
@@ -247,74 +255,88 @@ for pagina_atual in range(pagina_inicio, pagina_fim + 1):
     for indice in range(total_linhas):
         print(f"  → Abrindo licitação {indice + 1}/{total_linhas} da página {pagina_atual}...")
 
-        # Abre navegador limpo para cada licitação
-        nav = iniciar_navegador()
-        aplicar_filtros(nav)
+        sucesso = False
+        tentativa = 0
 
-        try:
-            # Espera as linhas da tabela aparecerem antes de navegar
-            WebDriverWait(nav, 60).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "tr.linhaImpar, tr.linhaPar"))
-            )
-            time.sleep(2)
-            navegar_para_pagina(nav, pagina_atual)
+        while not sucesso and tentativa < 3:
+            if tentativa > 0:
+                print(f"     Tentativa {tentativa + 1}/3...")
 
-            # Espera o overlay j_id18 sumir antes de clicar
-            WebDriverWait(nav, 60).until(
-                EC.invisibility_of_element_located((By.ID, "j_id18"))
-            )
+            nav = iniciar_navegador()
+            aplicar_filtros(nav)
 
-            # Rebusca as linhas após navegar para garantir que estão frescas
-            linhas_nav = WebDriverWait(nav, 60).until(
-                EC.presence_of_all_elements_located((By.CSS_SELECTOR, "tr.linhaImpar, tr.linhaPar"))
-            )
-            nav.execute_script("arguments[0].click();", linhas_nav[indice])
-            time.sleep(2)
-
-            # Visualizar proposta
-            visu_proposta = WebDriverWait(nav, 20).until(
-                EC.element_to_be_clickable((By.ID, "formularioDeCrud:visualizarSuperior"))
-            )
-            visu_proposta.click()
-            time.sleep(3)
-
-            # Tentar expandir itens (só existe quando os itens estão recolhidos)
             try:
-                ver_resultados = WebDriverWait(nav, 5).until(
-                    EC.element_to_be_clickable((By.ID, "formularioDeCrud:grupoItensCoEPDataTable:0:j_id293"))
+                # Espera as linhas da tabela aparecerem antes de navegar
+                WebDriverWait(nav, 60).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, "tr.linhaImpar, tr.linhaPar"))
                 )
-                ver_resultados.click()
-                time.sleep(10)
-            except:
-                print("     Botão expandir não encontrado, verificando tabela diretamente...")
-                site_check = BeautifulSoup(nav.page_source, 'html.parser')
-                tbodys_check = site_check.find_all("tbody", id=lambda x: x and (
-                    "itensGrupoListAction:tb" in x or
-                    "itemCoEPDataTable:tb" in x
-                ))
-                if not tbodys_check:
-                    print("     Nenhuma tabela encontrada, pulando licitação.")
-                    nav.quit()
-                    continue
-                print(f"     {len(tbodys_check)} tabela(s) já visível(is), capturando dados...")
+                time.sleep(2)
+                navegar_para_pagina(nav, pagina_atual)
+
+                # Espera o overlay j_id18 sumir antes de clicar
+                WebDriverWait(nav, 60).until(
+                    EC.invisibility_of_element_located((By.ID, "j_id18"))
+                )
+
+                # Rebusca as linhas após navegar para garantir que estão frescas
+                linhas_nav = WebDriverWait(nav, 60).until(
+                    EC.presence_of_all_elements_located((By.CSS_SELECTOR, "tr.linhaImpar, tr.linhaPar"))
+                )
+                # Ordena as linhas pela posição vertical na página
+                linhas_nav = sorted(linhas_nav, key=lambda el: el.location['y'])
+                nav.execute_script("arguments[0].click();", linhas_nav[indice])
+                time.sleep(2)
+
+                # Visualizar proposta
+                visu_proposta = WebDriverWait(nav, 20).until(
+                    EC.element_to_be_clickable((By.ID, "formularioDeCrud:visualizarSuperior"))
+                )
+                visu_proposta.click()
                 time.sleep(3)
 
-            # Captura o número do processo
-            site_processo = BeautifulSoup(nav.page_source, 'html.parser')
-            span_processo = site_processo.find("span", class_="visual_numero_viproc_coep")
-            numero_processo = span_processo.get_text(strip=True) if span_processo else ""
-            print(f"     Nº do Processo: {numero_processo}")
+                # Tentar expandir itens (só existe quando os itens estão recolhidos)
+                try:
+                    ver_resultados = WebDriverWait(nav, 5).until(
+                        EC.element_to_be_clickable((By.ID, "formularioDeCrud:grupoItensCoEPDataTable:0:j_id293"))
+                    )
+                    ver_resultados.click()
+                    time.sleep(10)
+                except:
+                    print("     Botão expandir não encontrado, verificando tabela diretamente...")
+                    site_check = BeautifulSoup(nav.page_source, 'html.parser')
+                    tbodys_check = site_check.find_all("tbody", id=lambda x: x and (
+                        "itensGrupoListAction:tb" in x or
+                        "itemCoEPDataTable:tb" in x
+                    ))
+                    if not tbodys_check:
+                        print("     Nenhuma tabela encontrada, pulando licitação.")
+                        nav.quit()
+                        tentativa += 1
+                        continue
+                    print(f"     {len(tbodys_check)} tabela(s) já visível(is), capturando dados...")
+                    time.sleep(3)
 
-            # Scraping dos itens
-            dados = scraping_licitacao(nav, numero_processo)
-            dados_totais.extend(dados)
-            print(f"     {len(dados)} itens coletados.")
+                # Captura o número do processo
+                site_processo = BeautifulSoup(nav.page_source, 'html.parser')
+                span_processo = site_processo.find("span", class_="visual_numero_viproc_coep")
+                numero_processo = span_processo.get_text(strip=True) if span_processo else ""
+                print(f"     Nº do Processo: {numero_processo}")
 
-        except Exception as e:
-            print(f"     Erro na licitação {indice + 1} da página {pagina_atual}: {e}")
+                # Scraping dos itens
+                dados = scraping_licitacao(nav, numero_processo)
+                dados_totais.extend(dados)
+                print(f"     {len(dados)} itens coletados.")
+                sucesso = True
 
-        finally:
-            nav.quit()
+            except Exception as e:
+                print(f"     Erro na tentativa {tentativa + 1}: {e}")
+                tentativa += 1
+
+            finally:
+                nav.quit()
+
+        if not sucesso:
+            print(f"     Licitação {indice + 1} da página {pagina_atual} não foi coletada após 3 tentativas.")
 
 nav_principal.quit()
 
