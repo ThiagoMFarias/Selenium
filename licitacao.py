@@ -18,40 +18,43 @@ def iniciar_navegador():
 def aplicar_filtros(nav):
     # Natureza da Aquisição
     natureza = nav.find_element(By.ID, "formularioDeCrud:naturezaAquisicaoDecoration:naturezaAquisicao")
-    Select(natureza).select_by_value("1111")
+    Select(natureza).select_by_value("1112")
     time.sleep(2)
 
     # Tipo de aquisição
-    WebDriverWait(nav, 30).until(EC.invisibility_of_element_located((By.ID, "formularioDeCrud:j_id396")))
+    WebDriverWait(nav, 60).until(EC.invisibility_of_element_located((By.ID, "formularioDeCrud:j_id396")))
+    WebDriverWait(nav, 60).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, "#formularioDeCrud\\:tipoAquisicaoDecoration\\:tipoAquisicao option[value='1206']"))
+    )
     tipo = nav.find_element(By.ID, "formularioDeCrud:tipoAquisicaoDecoration:tipoAquisicao")
-    Select(tipo).select_by_value("1206")
+    Select(tipo).select_by_value("1207")
 
     # Tipo de regime
-    regime = WebDriverWait(nav, 30).until(
+    regime = WebDriverWait(nav, 60).until(
         EC.element_to_be_clickable((By.ID, "formularioDeCrud:j_id259:j_id273:1"))
     )
     regime.click()
 
     # Sistemática de aquisição
-    WebDriverWait(nav, 30).until(EC.invisibility_of_element_located((By.ID, "formularioDeCrud:j_id396")))
+    WebDriverWait(nav, 60).until(EC.invisibility_of_element_located((By.ID, "formularioDeCrud:j_id396")))
     sistematica = nav.find_element(By.ID, "formularioDeCrud:sistematicaAquisicaoDecoration:sistAquisicao")
-    Select(sistematica).select_by_value("1131")
+    Select(sistematica).select_by_value("1132")
     time.sleep(2)
 
     # Forma de aquisição
-    WebDriverWait(nav, 30).until(EC.invisibility_of_element_located((By.ID, "formularioDeCrud:j_id396")))
+    WebDriverWait(nav, 60).until(EC.invisibility_of_element_located((By.ID, "formularioDeCrud:j_id396")))
     forma = nav.find_element(By.ID, "formularioDeCrud:formaAquisicaoDecoration:formaAquisicao")
-    Select(forma).select_by_value("1236")
+    Select(forma).select_by_value("1237")
 
     # Status da publicação
-    WebDriverWait(nav, 30).until(EC.invisibility_of_element_located((By.ID, "formularioDeCrud:j_id396")))
+    WebDriverWait(nav, 60).until(EC.invisibility_of_element_located((By.ID, "formularioDeCrud:j_id396")))
     status = nav.find_element(By.ID, "formularioDeCrud:statusDecoration:status")
     Select(status).select_by_value("FINALIZADA_ELETRONICA")
 
     # Região
-    WebDriverWait(nav, 30).until(EC.invisibility_of_element_located((By.ID, "formularioDeCrud:j_id396")))
+    WebDriverWait(nav, 60).until(EC.invisibility_of_element_located((By.ID, "formularioDeCrud:j_id396")))
     regiao = nav.find_element(By.ID, "formularioDeCrud:microRegiaoDecoration:microRegiao")
-    Select(regiao).select_by_value("1162")
+    Select(regiao).select_by_value("1163")
 
     # Buscar
     botao_buscar = nav.find_element(By.ID, "formularioDeCrud:pesquisar")
@@ -69,17 +72,48 @@ def esperar_overlays(nav):
     )
 
 
+def esperar_paginacao(nav):
+    """Espera a paginação aparecer na página."""
+    WebDriverWait(nav, 60).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, "td.rich-datascr-act"))
+    )
+    time.sleep(2)
+
+
+def pagina_atual_numero(nav):
+    """Retorna o número da página atualmente ativa."""
+    return int(nav.find_element(By.CSS_SELECTOR, "td.rich-datascr-act").text.strip())
+
+
 def avancar_uma_pagina(nav):
-    """Avança apenas uma página clicando no botão próximo."""
-    esperar_overlays(nav)
-    botao_proximo = nav.find_element(
-        By.XPATH, "//td[contains(@class, 'rich-datascr-button') and contains(., '»') and not(contains(., '»»'))]"
+    """Avança apenas uma página e espera o número da página mudar."""
+    # Espera as linhas da tabela estarem presentes — prova real de que a página está pronta
+    WebDriverWait(nav, 60).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, "tr.linhaImpar, tr.linhaPar"))
+    )
+
+    # Espera o overlay j_id18 sumir antes de tentar clicar
+    WebDriverWait(nav, 60).until(
+        EC.invisibility_of_element_located((By.ID, "j_id18"))
+    )
+
+    pagina_antes = pagina_atual_numero(nav)
+
+    # Espera o botão próximo estar clicável
+    botao_proximo = WebDriverWait(nav, 60).until(
+        EC.element_to_be_clickable((By.XPATH, "//td[contains(@class, 'rich-datascr-button') and contains(., '»') and not(contains(., '»»'))]"))
     )
     if "rich-datascr-button-dsbld" in botao_proximo.get_attribute("class"):
         raise Exception("Botão próximo está desabilitado.")
+
     nav.execute_script("arguments[0].click();", botao_proximo)
-    time.sleep(2)
-    esperar_overlays(nav)
+    time.sleep(3)  # dá tempo ao site processar o clique
+
+    # Espera chegar exatamente na página seguinte
+    pagina_esperada = pagina_antes + 1
+    WebDriverWait(nav, 120).until(
+        lambda d: pagina_atual_numero(d) == pagina_esperada
+    )
 
 
 def navegar_para_pagina(nav, numero_pagina):
@@ -88,24 +122,29 @@ def navegar_para_pagina(nav, numero_pagina):
     if numero_pagina == 1:
         return
 
+    # Espera a paginação estar visível antes de começar
+    esperar_paginacao(nav)
+
     for _ in range(numero_pagina - 1):
-        esperar_overlays(nav)
+        pagina_antes = pagina_atual_numero(nav)
 
-        botao_proximo = nav.find_element(
-            By.XPATH, "//td[contains(@class, 'rich-datascr-button') and contains(., '»') and not(contains(., '»»'))]"
+        # Espera o botão próximo estar clicável
+        botao_proximo = WebDriverWait(nav, 60).until(
+            EC.element_to_be_clickable((By.XPATH, "//td[contains(@class, 'rich-datascr-button') and contains(., '»') and not(contains(., '»»'))]"))
         )
-
-        # Verifica se o botão está desabilitado — página não existe
         if "rich-datascr-button-dsbld" in botao_proximo.get_attribute("class"):
             raise Exception("Página não existe — botão próximo está desabilitado.")
 
         nav.execute_script("arguments[0].click();", botao_proximo)
-        time.sleep(2)
-        esperar_overlays(nav)
+
+        # Espera o número da página mudar de fato
+        pagina_esperada = pagina_antes + 1
+        WebDriverWait(nav, 60).until(
+            lambda d: pagina_atual_numero(d) == pagina_esperada
+        )
 
     # Confirma que chegou na página certa
-    pagina_ativa = nav.find_element(By.CSS_SELECTOR, "td.rich-datascr-act")
-    pagina_confirmada = int(pagina_ativa.text.strip())
+    pagina_confirmada = pagina_atual_numero(nav)
     if pagina_confirmada != numero_pagina:
         raise Exception(f"Esperava página {numero_pagina}, mas está na página {pagina_confirmada}.")
 
@@ -119,13 +158,16 @@ def pagina_existe(nav, numero_pagina):
         return False
 
 
-def scraping_licitacao(nav):
+def scraping_licitacao(nav, numero_processo):
     """Faz o scraping de todos os grupos de itens de uma licitação."""
     dados = []
     site = BeautifulSoup(nav.page_source, 'html.parser')
 
-    # Busca todos os tbodys de itens, independente do número do grupo
-    todos_tbodys = site.find_all("tbody", id=lambda x: x and "itensGrupoListAction:tb" in x)
+    # Busca todos os tbodys — tanto o padrão com botão expandir quanto sem
+    todos_tbodys = site.find_all("tbody", id=lambda x: x and (
+        "itensGrupoListAction:tb" in x or
+        "itemCoEPDataTable:tb" in x
+    ))
 
     if not todos_tbodys:
         print("     Nenhuma tabela de itens encontrada.")
@@ -134,8 +176,9 @@ def scraping_licitacao(nav):
     for tbody in todos_tbodys:
         for linha in tbody.select("tr.rich-table-row"):
             colunas = linha.find_all("td")
-            if len(colunas) >= 9:
+            if len(colunas) >= 8:
                 registro = {
+                    "numero_processo": numero_processo,
                     "item": colunas[0].get_text(strip=True),
                     "descricao": colunas[1].get_text(strip=True),
                     "fornecedor": colunas[2].get_text(strip=True),
@@ -144,7 +187,7 @@ def scraping_licitacao(nav):
                     "valor_total": colunas[5].get_text(strip=True),
                     "melhor_lance": colunas[6].get_text(strip=True),
                     "total_melhor_lance": colunas[7].get_text(strip=True),
-                    "marca": colunas[8].get_text(strip=True),
+                    "marca": colunas[8].get_text(strip=True) if len(colunas) >= 9 else "",
                 }
                 dados.append(registro)
 
@@ -161,6 +204,10 @@ pagina_fim = int(input("Página final: "))
 print("\nValidando intervalo...")
 nav_validacao = iniciar_navegador()
 aplicar_filtros(nav_validacao)
+WebDriverWait(nav_validacao, 60).until(
+    EC.presence_of_element_located((By.CSS_SELECTOR, "tr.linhaImpar, tr.linhaPar"))
+)
+time.sleep(2)
 
 if not pagina_existe(nav_validacao, pagina_fim):
     print(f"Página {pagina_fim} não existe. Verifique o intervalo e tente novamente.")
@@ -174,10 +221,15 @@ print(f"Intervalo válido! Rodando da página {pagina_inicio} até {pagina_fim}.
 
 dados_totais = []
 
-# Abre navegador principal, aplica filtros e navega direto para a pagina_inicio
+# Abre navegador principal, aplica filtros, espera carregar e navega para pagina_inicio
 nav_principal = iniciar_navegador()
 aplicar_filtros(nav_principal)
-navegar_para_pagina(nav_principal, pagina_inicio)  # vai direto para a página inicial escolhida
+# Espera as linhas da tabela aparecerem — prova real de que a página carregou
+WebDriverWait(nav_principal, 60).until(
+    EC.presence_of_element_located((By.CSS_SELECTOR, "tr.linhaImpar, tr.linhaPar"))
+)
+time.sleep(2)
+navegar_para_pagina(nav_principal, pagina_inicio)
 
 for pagina_atual in range(pagina_inicio, pagina_fim + 1):
     print(f"\n=== Processando página {pagina_atual}/{pagina_fim} ===")
@@ -200,22 +252,31 @@ for pagina_atual in range(pagina_inicio, pagina_fim + 1):
         aplicar_filtros(nav)
 
         try:
-            # Navega até a página correta no navegador da licitação
+            # Espera as linhas da tabela aparecerem antes de navegar
+            WebDriverWait(nav, 60).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, "tr.linhaImpar, tr.linhaPar"))
+            )
+            time.sleep(2)
             navegar_para_pagina(nav, pagina_atual)
 
-            # Espera os overlays sumirem antes de clicar na licitação
-            esperar_overlays(nav)
+            # Espera o overlay j_id18 sumir antes de clicar
+            WebDriverWait(nav, 60).until(
+                EC.invisibility_of_element_located((By.ID, "j_id18"))
+            )
 
-            linhas_nav = nav.find_elements(By.CSS_SELECTOR, "tr.linhaImpar, tr.linhaPar")
-            linhas_nav[indice].click()
-            time.sleep(3)
+            # Rebusca as linhas após navegar para garantir que estão frescas
+            linhas_nav = WebDriverWait(nav, 60).until(
+                EC.presence_of_all_elements_located((By.CSS_SELECTOR, "tr.linhaImpar, tr.linhaPar"))
+            )
+            nav.execute_script("arguments[0].click();", linhas_nav[indice])
+            time.sleep(2)
 
             # Visualizar proposta
             visu_proposta = WebDriverWait(nav, 20).until(
                 EC.element_to_be_clickable((By.ID, "formularioDeCrud:visualizarSuperior"))
             )
             visu_proposta.click()
-            time.sleep(5)
+            time.sleep(3)
 
             # Tentar expandir itens (só existe quando os itens estão recolhidos)
             try:
@@ -225,11 +286,27 @@ for pagina_atual in range(pagina_inicio, pagina_fim + 1):
                 ver_resultados.click()
                 time.sleep(10)
             except:
-                print("     Botão expandir não encontrado, itens já visíveis.")
+                print("     Botão expandir não encontrado, verificando tabela diretamente...")
+                site_check = BeautifulSoup(nav.page_source, 'html.parser')
+                tbodys_check = site_check.find_all("tbody", id=lambda x: x and (
+                    "itensGrupoListAction:tb" in x or
+                    "itemCoEPDataTable:tb" in x
+                ))
+                if not tbodys_check:
+                    print("     Nenhuma tabela encontrada, pulando licitação.")
+                    nav.quit()
+                    continue
+                print(f"     {len(tbodys_check)} tabela(s) já visível(is), capturando dados...")
                 time.sleep(3)
 
+            # Captura o número do processo
+            site_processo = BeautifulSoup(nav.page_source, 'html.parser')
+            span_processo = site_processo.find("span", class_="visual_numero_viproc_coep")
+            numero_processo = span_processo.get_text(strip=True) if span_processo else ""
+            print(f"     Nº do Processo: {numero_processo}")
+
             # Scraping dos itens
-            dados = scraping_licitacao(nav)
+            dados = scraping_licitacao(nav, numero_processo)
             dados_totais.extend(dados)
             print(f"     {len(dados)} itens coletados.")
 
@@ -245,7 +322,7 @@ nav_principal.quit()
 if dados_totais:
     nome_arquivo = f"licitacoes_pag{pagina_inicio}_ate_{pagina_fim}.xlsx"
     df = pd.DataFrame(dados_totais, columns=[
-        "item", "descricao", "fornecedor", "quantidade",
+        "numero_processo", "item", "descricao", "fornecedor", "quantidade",
         "valor_unitario", "valor_total", "melhor_lance",
         "total_melhor_lance", "marca"
     ])
