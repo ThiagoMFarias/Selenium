@@ -93,8 +93,16 @@ def avancar_uma_pagina(nav):
     WebDriverWait(nav, 60).until(
         EC.presence_of_element_located((By.CSS_SELECTOR, "tr.linhaImpar, tr.linhaPar"))
     )
-    time.sleep(2)
 
+    # Tenta esperar o overlay j_id18 sumir (ignora se não existir)
+    try:
+        WebDriverWait(nav, 10).until(
+            EC.invisibility_of_element_located((By.ID, "j_id18"))
+        )
+    except:
+        pass
+
+    time.sleep(2)
     pagina_antes = pagina_atual_numero(nav)
     print(f"     [avancar] Página atual antes do clique: {pagina_antes}")
 
@@ -108,12 +116,19 @@ def avancar_uma_pagina(nav):
     nav.execute_script("arguments[0].scrollIntoView(true);", botao_proximo)
     time.sleep(1)
 
-    # Tenta clicar via ActionChains
+    # Tenta ActionChains primeiro
     ActionChains(nav).move_to_element(botao_proximo).click().perform()
     time.sleep(3)
 
     pagina_depois = pagina_atual_numero(nav)
     print(f"     [avancar] Página após o clique: {pagina_depois}")
+
+    # Se não mudou, tenta execute_script como fallback
+    if pagina_depois == pagina_antes:
+        print("     [avancar] ActionChains não funcionou, tentando execute_script...")
+        nav.execute_script("arguments[0].click();", botao_proximo)
+        time.sleep(3)
+        print(f"     [avancar] Página após execute_script: {pagina_atual_numero(nav)}")
 
     # Espera chegar exatamente na página seguinte
     pagina_esperada = pagina_antes + 1
@@ -357,3 +372,4 @@ if dados_totais:
     print(f"\nConcluído! {len(dados_totais)} registros salvos em {nome_arquivo}")
 else:
     print("\nNenhum dado coletado.")
+    
