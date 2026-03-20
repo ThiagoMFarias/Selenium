@@ -24,7 +24,7 @@ def aplicar_filtros(nav):
     # Tipo de aquisição
     WebDriverWait(nav, 60).until(EC.invisibility_of_element_located((By.ID, "formularioDeCrud:j_id396")))
     WebDriverWait(nav, 60).until(
-        EC.presence_of_element_located((By.CSS_SELECTOR, "#formularioDeCrud\\:tipoAquisicaoDecoration\\:tipoAquisicao option[value='1206']"))
+        EC.presence_of_element_located((By.CSS_SELECTOR, "#formularioDeCrud\\:tipoAquisicaoDecoration\\:tipoAquisicao option[value='1207']"))
     )
     tipo = nav.find_element(By.ID, "formularioDeCrud:tipoAquisicaoDecoration:tipoAquisicao")
     Select(tipo).select_by_value("1207")
@@ -125,6 +125,8 @@ def avancar_uma_pagina(nav):
 def navegar_para_pagina(nav, numero_pagina):
     """Navega clicando no botão próximo até chegar na página desejada.
     Pressupõe que o navegador já está na página 1."""
+    from selenium.webdriver.common.action_chains import ActionChains
+
     if numero_pagina == 1:
         return
 
@@ -134,18 +136,21 @@ def navegar_para_pagina(nav, numero_pagina):
     for _ in range(numero_pagina - 1):
         pagina_antes = pagina_atual_numero(nav)
 
-        # Espera o botão próximo estar clicável
         botao_proximo = WebDriverWait(nav, 60).until(
-            EC.element_to_be_clickable((By.XPATH, "//td[contains(@class, 'rich-datascr-button') and contains(., '»') and not(contains(., '»»'))]"))
+            EC.presence_of_element_located((By.XPATH, "//td[contains(@class, 'rich-datascr-button') and contains(., '»') and not(contains(., '»»'))]"))
         )
         if "rich-datascr-button-dsbld" in botao_proximo.get_attribute("class"):
             raise Exception("Página não existe — botão próximo está desabilitado.")
 
-        nav.execute_script("arguments[0].click();", botao_proximo)
+        # Scroll até o botão e clica via ActionChains
+        nav.execute_script("arguments[0].scrollIntoView(true);", botao_proximo)
+        time.sleep(1)
+        ActionChains(nav).move_to_element(botao_proximo).click().perform()
+        time.sleep(3)
 
         # Espera o número da página mudar de fato
         pagina_esperada = pagina_antes + 1
-        WebDriverWait(nav, 60).until(
+        WebDriverWait(nav, 120).until(
             lambda d: pagina_atual_numero(d) == pagina_esperada
         )
 
