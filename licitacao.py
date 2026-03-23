@@ -6,6 +6,7 @@ from selenium.webdriver.support.ui import Select
 from bs4 import BeautifulSoup
 import pandas as pd
 import time
+from datetime import datetime
 
 
 def iniciar_navegador():
@@ -238,8 +239,10 @@ def scraping_licitacao(nav, numero_processo, data_inicio):
 
     return dados
 
-
 # ─── ESCOLHA DO INTERVALO ────────────────────────────────────────────────────
+
+inicio = datetime.now()
+print(f"Início: {inicio.strftime('%d/%m/%Y %H:%M:%S')}")
 
 print("=== Configuração do intervalo de páginas ===")
 pagina_inicio = int(input("Página inicial: "))
@@ -388,3 +391,11 @@ if dados_totais:
     print(f"\nConcluído! {len(dados_totais)} registros salvos em {nome_arquivo}")
 else:
     print("\nNenhum dado coletado.")
+
+fim = datetime.now()
+duracao = fim - inicio
+horas, resto = divmod(duracao.total_seconds(), 3600)
+minutos, segundos = divmod(resto, 60)
+print(f"\nInicio:   {inicio.strftime('%d/%m/%Y %H:%M:%S')}")
+print(f"Fim:      {fim.strftime('%d/%m/%Y %H:%M:%S')}")
+print(f"Duração:  {int(horas)}h {int(minutos)}m {int(segundos)}s")
