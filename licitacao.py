@@ -87,7 +87,9 @@ def pagina_atual_numero(nav):
 
 def avancar_uma_pagina(nav):
     """Avança apenas uma página e espera o número da página mudar."""
-    from selenium.webdriver.common.action_chains import ActionChains
+
+    # Força o foco na janela do navegador
+    nav.switch_to.window(nav.current_window_handle)
 
     # Espera as linhas da tabela estarem presentes
     WebDriverWait(nav, 60).until(
@@ -112,23 +114,16 @@ def avancar_uma_pagina(nav):
     if "rich-datascr-button-dsbld" in botao_proximo.get_attribute("class"):
         raise Exception("Botão próximo está desabilitado.")
 
-    # Scroll até o botão para garantir visibilidade
-    nav.execute_script("arguments[0].scrollIntoView(true);", botao_proximo)
+    # Rola para o TOPO da página antes de clicar
+    nav.execute_script("window.scrollTo(0, 0);")
     time.sleep(1)
 
-    # Tenta ActionChains primeiro
-    ActionChains(nav).move_to_element(botao_proximo).click().perform()
+    # Clica via execute_script direto no botão
+    nav.execute_script("arguments[0].click();", botao_proximo)
     time.sleep(3)
 
     pagina_depois = pagina_atual_numero(nav)
     print(f"     [avancar] Página após o clique: {pagina_depois}")
-
-    # Se não mudou, tenta execute_script como fallback
-    if pagina_depois == pagina_antes:
-        print("     [avancar] ActionChains não funcionou, tentando execute_script...")
-        nav.execute_script("arguments[0].click();", botao_proximo)
-        time.sleep(3)
-        print(f"     [avancar] Página após execute_script: {pagina_atual_numero(nav)}")
 
     # Espera chegar exatamente na página seguinte
     pagina_esperada = pagina_antes + 1
@@ -157,10 +152,10 @@ def navegar_para_pagina(nav, numero_pagina):
         if "rich-datascr-button-dsbld" in botao_proximo.get_attribute("class"):
             raise Exception("Página não existe — botão próximo está desabilitado.")
 
-        # Scroll até o botão e clica via ActionChains
-        nav.execute_script("arguments[0].scrollIntoView(true);", botao_proximo)
+        # Rola para o TOPO da página antes de clicar — evita overlay cobrir o botão
+        nav.execute_script("window.scrollTo(0, 0);")
         time.sleep(1)
-        ActionChains(nav).move_to_element(botao_proximo).click().perform()
+        nav.execute_script("arguments[0].click();", botao_proximo)
         time.sleep(3)
 
         # Espera o número da página mudar de fato
@@ -372,4 +367,3 @@ if dados_totais:
     print(f"\nConcluído! {len(dados_totais)} registros salvos em {nome_arquivo}")
 else:
     print("\nNenhum dado coletado.")
-    
