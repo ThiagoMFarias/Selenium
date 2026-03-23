@@ -179,7 +179,7 @@ def pagina_existe(nav, numero_pagina):
         return False
 
 
-def scraping_licitacao(nav, numero_processo):
+def scraping_licitacao(nav, numero_processo, data_inicio):
     """Faz o scraping de todos os grupos de itens de uma licitação."""
     dados = []
     site = BeautifulSoup(nav.page_source, 'html.parser')
@@ -200,6 +200,7 @@ def scraping_licitacao(nav, numero_processo):
             if len(colunas) >= 8:
                 registro = {
                     "numero_processo": numero_processo,
+                    "data_inicio": data_inicio,
                     "item": colunas[0].get_text(strip=True),
                     "descricao": colunas[1].get_text(strip=True),
                     "fornecedor": colunas[2].get_text(strip=True),
@@ -242,30 +243,25 @@ print(f"Intervalo válido! Rodando da página {pagina_inicio} até {pagina_fim}.
 
 dados_totais = []
 
-# Abre navegador principal, aplica filtros, espera carregar e navega para pagina_inicio
-nav_principal = iniciar_navegador()
-aplicar_filtros(nav_principal)
-# Espera as linhas da tabela aparecerem — prova real de que a página carregou
-WebDriverWait(nav_principal, 60).until(
-    EC.presence_of_element_located((By.CSS_SELECTOR, "tr.linhaImpar, tr.linhaPar"))
-)
-time.sleep(2)
-navegar_para_pagina(nav_principal, pagina_inicio)
-
 for pagina_atual in range(pagina_inicio, pagina_fim + 1):
     print(f"\n=== Processando página {pagina_atual}/{pagina_fim} ===")
 
-    # Na primeira iteração já está na página certa
-    # Nas demais, avança apenas 1 página
-    if pagina_atual > pagina_inicio:
-        avancar_uma_pagina(nav_principal)
+    # Abre navegador, aplica filtros e navega até a página desejada
+    nav_pagina = iniciar_navegador()
+    aplicar_filtros(nav_pagina)
+    WebDriverWait(nav_pagina, 60).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, "tr.linhaImpar, tr.linhaPar"))
+    )
+    time.sleep(2)
+    navegar_para_pagina(nav_pagina, pagina_atual)
 
-    linhas = nav_principal.find_elements(By.CSS_SELECTOR, "tr.linhaImpar, tr.linhaPar")
-    # Ordena as linhas pela posição vertical na página
+    # Conta as licitações da página
+    linhas = nav_pagina.find_elements(By.CSS_SELECTOR, "tr.linhaImpar, tr.linhaPar")
     linhas = sorted(linhas, key=lambda el: el.location['y'])
     total_linhas = len(linhas)
-
     print(f"Licitações encontradas na página {pagina_atual}: {total_linhas}")
+
+    nav_pagina.quit()
 
     for indice in range(total_linhas):
         print(f"  → Abrindo licitação {indice + 1}/{total_linhas} da página {pagina_atual}...")
@@ -297,7 +293,6 @@ for pagina_atual in range(pagina_inicio, pagina_fim + 1):
                 linhas_nav = WebDriverWait(nav, 60).until(
                     EC.presence_of_all_elements_located((By.CSS_SELECTOR, "tr.linhaImpar, tr.linhaPar"))
                 )
-                # Ordena as linhas pela posição vertical na página
                 linhas_nav = sorted(linhas_nav, key=lambda el: el.location['y'])
                 nav.execute_script("arguments[0].click();", linhas_nav[indice])
                 time.sleep(2)
@@ -337,8 +332,13 @@ for pagina_atual in range(pagina_inicio, pagina_fim + 1):
                 numero_processo = span_processo.get_text(strip=True) if span_processo else ""
                 print(f"     Nº do Processo: {numero_processo}")
 
+                # Captura a data de início (remove a hora)
+                span_data = site_processo.find("span", class_="visual_inicio_acolhimento_propostas_coep")
+                data_inicio = span_data.get_text(strip=True).split(" ")[0] if span_data else ""
+                print(f"     Data início: {data_inicio}")
+
                 # Scraping dos itens
-                dados = scraping_licitacao(nav, numero_processo)
+                dados = scraping_licitacao(nav, numero_processo, data_inicio)
                 dados_totais.extend(dados)
                 print(f"     {len(dados)} itens coletados.")
                 sucesso = True
@@ -353,13 +353,11 @@ for pagina_atual in range(pagina_inicio, pagina_fim + 1):
         if not sucesso:
             print(f"     Licitação {indice + 1} da página {pagina_atual} não foi coletada após 3 tentativas.")
 
-nav_principal.quit()
-
 # ─── EXPORTAR PARA EXCEL ─────────────────────────────────────────────────────
 if dados_totais:
     nome_arquivo = f"licitacoes_pag{pagina_inicio}_ate_{pagina_fim}.xlsx"
     df = pd.DataFrame(dados_totais, columns=[
-        "numero_processo", "item", "descricao", "fornecedor", "quantidade",
+        "numero_processo", "data_inicio", "item", "descricao", "fornecedor", "quantidade",
         "valor_unitario", "valor_total", "melhor_lance",
         "total_melhor_lance", "marca"
     ])
