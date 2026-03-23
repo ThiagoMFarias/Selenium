@@ -179,6 +179,23 @@ def pagina_existe(nav, numero_pagina):
         return False
 
 
+def converter_valor(texto):
+    """Converte string no formato brasileiro para float."""
+    try:
+        return float(texto.replace(".", "").replace(",", "."))
+    except:
+        return None
+
+
+def converter_data(texto):
+    """Converte data DD/MM/AAAA para AAAA-MM-DD."""
+    try:
+        from datetime import datetime
+        return datetime.strptime(texto, "%d/%m/%Y").date()
+    except:
+        return None
+
+
 def scraping_licitacao(nav, numero_processo, data_inicio):
     """Faz o scraping de todos os grupos de itens de uma licitação."""
     dados = []
@@ -200,15 +217,15 @@ def scraping_licitacao(nav, numero_processo, data_inicio):
             if len(colunas) >= 8:
                 registro = {
                     "numero_processo": numero_processo,
-                    "data_inicio": data_inicio,
+                    "data_inicio": converter_data(data_inicio),
                     "item": colunas[0].get_text(strip=True),
                     "descricao": colunas[1].get_text(strip=True),
                     "fornecedor": colunas[2].get_text(strip=True),
                     "quantidade": colunas[3].get_text(strip=True),
-                    "valor_unitario": colunas[4].get_text(strip=True),
-                    "valor_total": colunas[5].get_text(strip=True),
-                    "melhor_lance": colunas[6].get_text(strip=True),
-                    "total_melhor_lance": colunas[7].get_text(strip=True),
+                    "valor_unitario": converter_valor(colunas[4].get_text(strip=True)),
+                    "valor_total": converter_valor(colunas[5].get_text(strip=True)),
+                    "melhor_lance": converter_valor(colunas[6].get_text(strip=True)),
+                    "total_melhor_lance": converter_valor(colunas[7].get_text(strip=True)),
                     "marca": colunas[8].get_text(strip=True) if len(colunas) >= 9 else "",
                 }
                 dados.append(registro)
