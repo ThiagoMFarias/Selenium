@@ -195,6 +195,12 @@ def converter_data(texto):
     except:
         return None
 
+def converter_qtd(texto):
+    """Converte string no formato brasileiro para int."""
+    try:
+        return int(float(texto.replace(".", "").replace(",", ".")))
+    except:
+        return None
 
 def scraping_licitacao(nav, numero_processo, data_inicio):
     """Faz o scraping de todos os grupos de itens de uma licitação."""
@@ -221,7 +227,7 @@ def scraping_licitacao(nav, numero_processo, data_inicio):
                     "item": colunas[0].get_text(strip=True),
                     "descricao": colunas[1].get_text(strip=True),
                     "fornecedor": colunas[2].get_text(strip=True),
-                    "quantidade": colunas[3].get_text(strip=True),
+                    "quantidade": converter_qtd(colunas[3].get_text(strip=True)),
                     "valor_unitario": converter_valor(colunas[4].get_text(strip=True)),
                     "valor_total": converter_valor(colunas[5].get_text(strip=True)),
                     "melhor_lance": converter_valor(colunas[6].get_text(strip=True)),
