@@ -127,7 +127,7 @@ def avancar_uma_pagina(nav):
 
     # Espera chegar exatamente na página seguinte
     pagina_esperada = pagina_antes + 1
-    WebDriverWait(nav, 120).until(
+    WebDriverWait(nav, 30).until(
         lambda d: pagina_atual_numero(d) == pagina_esperada
     )
 
@@ -160,7 +160,7 @@ def navegar_para_pagina(nav, numero_pagina):
 
         # Espera o número da página mudar de fato
         pagina_esperada = pagina_antes + 1
-        WebDriverWait(nav, 120).until(
+        WebDriverWait(nav, 30).until(
             lambda d: pagina_atual_numero(d) == pagina_esperada
         )
 
@@ -294,6 +294,7 @@ for pagina_atual in range(pagina_inicio, pagina_fim + 1):
         while True:
             nav = iniciar_navegador()
             aplicar_filtros(nav)
+            dados = []
 
             try:
                 # Espera as linhas da tabela aparecerem antes de navegar
@@ -338,12 +339,10 @@ for pagina_atual in range(pagina_inicio, pagina_fim + 1):
                         "itemCoEPDataTable:tb" in x
                     ))
                     if not tbodys_check:
-                        print("     Nenhuma tabela encontrada, pulando licitação.")
-                        nav.quit()
-                        tentativa += 1
-                        continue
-                    print(f"     {len(tbodys_check)} tabela(s) já visível(is), capturando dados...")
-                    time.sleep(3)
+                        print("     Nenhuma tabela encontrada, tentando novamente...")
+                    else:
+                        print(f"     {len(tbodys_check)} tabela(s) já visível(is), capturando dados...")
+                        time.sleep(3)
 
                 # Captura o número do processo
                 site_processo = BeautifulSoup(nav.page_source, 'html.parser')
