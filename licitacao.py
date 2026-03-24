@@ -6,7 +6,6 @@ from selenium.webdriver.support.ui import Select
 from bs4 import BeautifulSoup
 import pandas as pd
 import time
-from datetime import datetime
 
 
 def iniciar_navegador():
@@ -196,12 +195,6 @@ def converter_data(texto):
     except:
         return None
 
-def converter_qtd(texto):
-    """Converte string no formato brasileiro para int."""
-    try:
-        return int(float(texto.replace(".", "").replace(",", ".")))
-    except:
-        return None
 
 def scraping_licitacao(nav, numero_processo, data_inicio):
     """Faz o scraping de todos os grupos de itens de uma licitação."""
@@ -228,7 +221,7 @@ def scraping_licitacao(nav, numero_processo, data_inicio):
                     "item": colunas[0].get_text(strip=True),
                     "descricao": colunas[1].get_text(strip=True),
                     "fornecedor": colunas[2].get_text(strip=True),
-                    "quantidade": converter_qtd(colunas[3].get_text(strip=True)),
+                    "quantidade": colunas[3].get_text(strip=True),
                     "valor_unitario": converter_valor(colunas[4].get_text(strip=True)),
                     "valor_total": converter_valor(colunas[5].get_text(strip=True)),
                     "melhor_lance": converter_valor(colunas[6].get_text(strip=True)),
@@ -239,8 +232,10 @@ def scraping_licitacao(nav, numero_processo, data_inicio):
 
     return dados
 
+
 # ─── ESCOLHA DO INTERVALO ────────────────────────────────────────────────────
 
+from datetime import datetime
 inicio = datetime.now()
 print(f"Início: {inicio.strftime('%d/%m/%Y %H:%M:%S')}")
 
@@ -272,22 +267,30 @@ dados_totais = []
 for pagina_atual in range(pagina_inicio, pagina_fim + 1):
     print(f"\n=== Processando página {pagina_atual}/{pagina_fim} ===")
 
-    # Abre navegador, aplica filtros e navega até a página desejada
-    nav_pagina = iniciar_navegador()
-    aplicar_filtros(nav_pagina)
-    WebDriverWait(nav_pagina, 60).until(
-        EC.presence_of_element_located((By.CSS_SELECTOR, "tr.linhaImpar, tr.linhaPar"))
-    )
-    time.sleep(2)
-    navegar_para_pagina(nav_pagina, pagina_atual)
+    # Abre navegador, aplica filtros e navega até a página desejada — com retry
+    total_linhas = 0
+    for tentativa_pagina in range(3):
+        nav_pagina = iniciar_navegador()
+        try:
+            aplicar_filtros(nav_pagina)
+            WebDriverWait(nav_pagina, 60).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, "tr.linhaImpar, tr.linhaPar"))
+            )
+            time.sleep(2)
+            navegar_para_pagina(nav_pagina, pagina_atual)
+            linhas = nav_pagina.find_elements(By.CSS_SELECTOR, "tr.linhaImpar, tr.linhaPar")
+            linhas = sorted(linhas, key=lambda el: el.location['y'])
+            total_linhas = len(linhas)
+            print(f"Licitações encontradas na página {pagina_atual}: {total_linhas}")
+            break
+        except Exception as e:
+            print(f"     Erro ao navegar para página {pagina_atual} (tentativa {tentativa_pagina + 1}/3): {e}")
+        finally:
+            nav_pagina.quit()
 
-    # Conta as licitações da página
-    linhas = nav_pagina.find_elements(By.CSS_SELECTOR, "tr.linhaImpar, tr.linhaPar")
-    linhas = sorted(linhas, key=lambda el: el.location['y'])
-    total_linhas = len(linhas)
-    print(f"Licitações encontradas na página {pagina_atual}: {total_linhas}")
-
-    nav_pagina.quit()
+    if total_linhas == 0:
+        print(f"     Não foi possível acessar a página {pagina_atual} após 3 tentativas. Pulando...")
+        continue
 
     for indice in range(total_linhas):
         print(f"  → Abrindo licitação {indice + 1}/{total_linhas} da página {pagina_atual}...")
@@ -394,8 +397,8 @@ else:
 
 fim = datetime.now()
 duracao = fim - inicio
-horas, resto = divmod(duracao.total_seconds(), 3600)
+horas, resto = divmod(int(duracao.total_seconds()), 3600)
 minutos, segundos = divmod(resto, 60)
-print(f"\nInicio:   {inicio.strftime('%d/%m/%Y %H:%M:%S')}")
+print(f"\nInício:   {inicio.strftime('%d/%m/%Y %H:%M:%S')}")
 print(f"Fim:      {fim.strftime('%d/%m/%Y %H:%M:%S')}")
-print(f"Duração:  {int(horas)}h {int(minutos)}m {int(segundos)}s")
+print(f"Duração:  {horas:02d}h {minutos:02d}min {segundos:02d}s")
