@@ -267,9 +267,9 @@ dados_totais = []
 for pagina_atual in range(pagina_inicio, pagina_fim + 1):
     print(f"\n=== Processando página {pagina_atual}/{pagina_fim} ===")
 
-    # Abre navegador, aplica filtros e navega até a página desejada — com retry
+    # Abre navegador, aplica filtros e navega até a página desejada — tenta até conseguir
     total_linhas = 0
-    for tentativa_pagina in range(3):
+    while True:
         nav_pagina = iniciar_navegador()
         try:
             aplicar_filtros(nav_pagina)
@@ -282,26 +282,16 @@ for pagina_atual in range(pagina_inicio, pagina_fim + 1):
             linhas = sorted(linhas, key=lambda el: el.location['y'])
             total_linhas = len(linhas)
             print(f"Licitações encontradas na página {pagina_atual}: {total_linhas}")
-            break
+            break  # conseguiu — sai do while
         except Exception as e:
-            print(f"     Erro ao navegar para página {pagina_atual} (tentativa {tentativa_pagina + 1}/3): {e}")
+            print(f"     Erro ao navegar para página {pagina_atual}, tentando novamente: {e}")
         finally:
             nav_pagina.quit()
-
-    if total_linhas == 0:
-        print(f"     Não foi possível acessar a página {pagina_atual} após 3 tentativas. Pulando...")
-        continue
 
     for indice in range(total_linhas):
         print(f"  → Abrindo licitação {indice + 1}/{total_linhas} da página {pagina_atual}...")
 
-        sucesso = False
-        tentativa = 0
-
-        while not sucesso and tentativa < 3:
-            if tentativa > 0:
-                print(f"     Tentativa {tentativa + 1}/3...")
-
+        while True:
             nav = iniciar_navegador()
             aplicar_filtros(nav)
 
@@ -370,17 +360,15 @@ for pagina_atual in range(pagina_inicio, pagina_fim + 1):
                 dados = scraping_licitacao(nav, numero_processo, data_inicio)
                 dados_totais.extend(dados)
                 print(f"     {len(dados)} itens coletados.")
-                sucesso = True
 
             except Exception as e:
-                print(f"     Erro na tentativa {tentativa + 1}: {e}")
-                tentativa += 1
+                print(f"     Erro na licitação {indice + 1}, tentando novamente: {e}")
 
             finally:
                 nav.quit()
 
-        if not sucesso:
-            print(f"     Licitação {indice + 1} da página {pagina_atual} não foi coletada após 3 tentativas.")
+            if dados:
+                break  # conseguiu — sai do while
 
 # ─── EXPORTAR PARA EXCEL ─────────────────────────────────────────────────────
 if dados_totais:
