@@ -43,6 +43,9 @@ def aplicar_filtros(nav):
 
     # Forma de aquisição
     WebDriverWait(nav, 60).until(EC.invisibility_of_element_located((By.ID, "formularioDeCrud:j_id396")))
+    WebDriverWait(nav, 60).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, "#formularioDeCrud\\:formaAquisicaoDecoration\\:formaAquisicao option[value='1237']"))
+    )
     forma = nav.find_element(By.ID, "formularioDeCrud:formaAquisicaoDecoration:formaAquisicao")
     Select(forma).select_by_value("1237")
 
@@ -127,7 +130,7 @@ def avancar_uma_pagina(nav):
 
     # Espera chegar exatamente na página seguinte
     pagina_esperada = pagina_antes + 1
-    WebDriverWait(nav, 30).until(
+    WebDriverWait(nav, 120).until(
         lambda d: pagina_atual_numero(d) == pagina_esperada
     )
 
@@ -160,7 +163,7 @@ def navegar_para_pagina(nav, numero_pagina):
 
         # Espera o número da página mudar de fato
         pagina_esperada = pagina_antes + 1
-        WebDriverWait(nav, 30).until(
+        WebDriverWait(nav, 120).until(
             lambda d: pagina_atual_numero(d) == pagina_esperada
         )
 
