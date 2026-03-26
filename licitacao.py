@@ -130,47 +130,65 @@ def avancar_uma_pagina(nav):
 
     # Espera chegar exatamente na página seguinte
     pagina_esperada = pagina_antes + 1
-    WebDriverWait(nav, 30).until(
+    WebDriverWait(nav, 120).until(
         lambda d: pagina_atual_numero(d) == pagina_esperada
     )
 
 
-def navegar_para_pagina(nav, numero_pagina):
-    """Navega clicando no botão próximo até chegar na página desejada.
-    Pressupõe que o navegador já está na página 1."""
-    from selenium.webdriver.common.action_chains import ActionChains
+def paginas_visiveis(nav):
+    """Retorna lista de números de páginas visíveis na paginação."""
+    site = BeautifulSoup(nav.page_source, 'html.parser')
+    tds = site.find_all("td", class_=lambda c: c and ("rich-datascr-inact" in c or "rich-datascr-act" in c))
+    numeros = []
+    for td in tds:
+        try:
+            numeros.append(int(td.get_text(strip=True)))
+        except:
+            pass
+    return numeros
 
+
+def navegar_para_pagina(nav, numero_pagina):
+    """Navega clicando no maior número visível da paginação
+    até a página desejada aparecer e então clica direto nela."""
     if numero_pagina == 1:
         return
 
-    # Espera a paginação estar visível antes de começar
     esperar_paginacao(nav)
 
-    for _ in range(numero_pagina - 1):
-        pagina_antes = pagina_atual_numero(nav)
+    while True:
+        numeros = paginas_visiveis(nav)
+        print(f"     [nav] Páginas visíveis: {numeros} — desejada: {numero_pagina}")
 
-        botao_proximo = WebDriverWait(nav, 60).until(
-            EC.presence_of_element_located((By.XPATH, "//td[contains(@class, 'rich-datascr-button') and contains(., '»') and not(contains(., '»»'))]"))
+        # Página desejada está visível — clica direto nela
+        if numero_pagina in numeros:
+            if pagina_atual_numero(nav) == numero_pagina:
+                return
+            botao = nav.find_element(
+                By.XPATH, f"//td[contains(@class,'rich-datascr-inact') and text()='{numero_pagina}']"
+            )
+            nav.execute_script("window.scrollTo(0, 0);")
+            nav.execute_script("arguments[0].click();", botao)
+            WebDriverWait(nav, 120).until(
+                lambda d: pagina_atual_numero(d) == numero_pagina
+            )
+            return
+
+        # Página desejada não está visível — clica no maior número visível
+        maximo_visivel = max(numeros) if numeros else 0
+        if maximo_visivel == 0:
+            raise Exception("Nenhum número visível na paginação.")
+
+        print(f"     [nav] Clicando no maior visível: {maximo_visivel}")
+        botao_maximo = nav.find_element(
+            By.XPATH, f"//td[contains(@class,'rich-datascr-inact') and text()='{maximo_visivel}']"
         )
-        if "rich-datascr-button-dsbld" in botao_proximo.get_attribute("class"):
-            raise Exception("Página não existe — botão próximo está desabilitado.")
-
-        # Rola para o TOPO da página antes de clicar — evita overlay cobrir o botão
         nav.execute_script("window.scrollTo(0, 0);")
-        time.sleep(1)
-        nav.execute_script("arguments[0].click();", botao_proximo)
+        nav.execute_script("arguments[0].click();", botao_maximo)
         time.sleep(3)
-
-        # Espera o número da página mudar de fato
-        pagina_esperada = pagina_antes + 1
-        WebDriverWait(nav, 30).until(
-            lambda d: pagina_atual_numero(d) == pagina_esperada
+        WebDriverWait(nav, 60).until(
+            lambda d: max(paginas_visiveis(d)) != maximo_visivel if paginas_visiveis(d) else False
         )
-
-    # Confirma que chegou na página certa
-    pagina_confirmada = pagina_atual_numero(nav)
-    if pagina_confirmada != numero_pagina:
-        raise Exception(f"Esperava página {numero_pagina}, mas está na página {pagina_confirmada}.")
 
 
 def pagina_existe(nav, numero_pagina):
