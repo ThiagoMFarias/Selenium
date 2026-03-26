@@ -130,7 +130,7 @@ def avancar_uma_pagina(nav):
 
     # Espera chegar exatamente na página seguinte
     pagina_esperada = pagina_antes + 1
-    WebDriverWait(nav, 120).until(
+    WebDriverWait(nav, 30).until(
         lambda d: pagina_atual_numero(d) == pagina_esperada
     )
 
@@ -163,7 +163,7 @@ def navegar_para_pagina(nav, numero_pagina):
 
         # Espera o número da página mudar de fato
         pagina_esperada = pagina_antes + 1
-        WebDriverWait(nav, 120).until(
+        WebDriverWait(nav, 30).until(
             lambda d: pagina_atual_numero(d) == pagina_esperada
         )
 
@@ -269,8 +269,7 @@ dados_totais = []
 
 for pagina_atual in range(pagina_inicio, pagina_fim + 1):
     print(f"\n=== Processando página {pagina_atual}/{pagina_fim} ===")
-
-    # Abre navegador, aplica filtros e navega até a página desejada — tenta até conseguir
+    dados_pagina = []  # acumula dados só da página atual
     total_linhas = 0
     while True:
         nav_pagina = iniciar_navegador()
@@ -361,6 +360,7 @@ for pagina_atual in range(pagina_inicio, pagina_fim + 1):
                 # Scraping dos itens
                 dados = scraping_licitacao(nav, numero_processo, data_inicio)
                 dados_totais.extend(dados)
+                dados_pagina.extend(dados)
                 print(f"     {len(dados)} itens coletados.")
 
             except Exception as e:
@@ -372,7 +372,20 @@ for pagina_atual in range(pagina_inicio, pagina_fim + 1):
             if dados:
                 break  # conseguiu — sai do while
 
-# ─── EXPORTAR PARA EXCEL ─────────────────────────────────────────────────────
+    # ─── EXPORTAR PÁGINA ATUAL ───────────────────────────────────────────────
+    if dados_pagina:
+        nome_arquivo = f"licitacoes_pag{pagina_atual}.xlsx"
+        df = pd.DataFrame(dados_pagina, columns=[
+            "numero_processo", "data_inicio", "item", "descricao", "fornecedor", "quantidade",
+            "valor_unitario", "valor_total", "melhor_lance",
+            "total_melhor_lance", "marca"
+        ])
+        df.to_excel(nome_arquivo, index=False)
+        print(f"  → Página {pagina_atual} salva: {len(dados_pagina)} registros em {nome_arquivo}")
+    else:
+        print(f"  → Página {pagina_atual}: nenhum dado coletado.")
+
+# ─── EXPORTAR EXCEL CONSOLIDADO ──────────────────────────────────────────────
 if dados_totais:
     nome_arquivo = f"licitacoes_pag{pagina_inicio}_ate_{pagina_fim}.xlsx"
     df = pd.DataFrame(dados_totais, columns=[
