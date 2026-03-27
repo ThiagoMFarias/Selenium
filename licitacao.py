@@ -8,29 +8,11 @@ import pandas as pd
 import time
 
 
-def iniciar_navegador(anonimo=True, firefox=False):
-    if firefox:
-        from selenium.webdriver.firefox.options import Options as FirefoxOptions
-        options = FirefoxOptions()
-        if anonimo:
-            options.add_argument("--private-window")
-        # Disfarça o Firefox como navegador normal
-        options.set_preference("dom.webdriver.enabled", False)
-        options.set_preference("useAutomationExtension", False)
-        options.set_preference("general.useragent.override", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:124.0) Gecko/20100101 Firefox/124.0")
-        navegador = webdriver.Firefox(options=options)
-    else:
-        options = webdriver.ChromeOptions()
-        if anonimo:
-            options.add_argument("--incognito")
-        options.add_argument("--ignore-certificate-errors")
-        options.add_argument("--allow-insecure-localhost")
-        # Disfarça o Chrome como navegador normal
-        options.add_argument("--disable-blink-features=AutomationControlled")
-        options.add_experimental_option("excludeSwitches", ["enable-automation"])
-        options.add_experimental_option("useAutomationExtension", False)
-        navegador = webdriver.Chrome(options=options)
-        navegador.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+def iniciar_navegador():
+    options = webdriver.ChromeOptions()
+    options.add_argument("--ignore-certificate-errors")
+    options.add_argument("--allow-insecure-localhost")
+    navegador = webdriver.Chrome(options=options)
     navegador.get("http://s2gpr.sefaz.ce.gov.br/licita-web/paginas/licita/PublicacaoList.seam")
     navegador.maximize_window()
     return navegador
@@ -119,53 +101,6 @@ def esperar_paginacao(nav):
 def pagina_atual_numero(nav):
     """Retorna o número da página atualmente ativa."""
     return int(nav.find_element(By.CSS_SELECTOR, "td.rich-datascr-act").text.strip())
-
-
-def avancar_uma_pagina(nav):
-    """Avança apenas uma página e espera o número da página mudar."""
-
-    # Força o foco na janela do navegador
-    nav.switch_to.window(nav.current_window_handle)
-
-    # Espera as linhas da tabela estarem presentes
-    WebDriverWait(nav, 60).until(
-        EC.presence_of_element_located((By.CSS_SELECTOR, "tr.linhaImpar, tr.linhaPar"))
-    )
-
-    # Tenta esperar o overlay j_id18 sumir (ignora se não existir)
-    try:
-        WebDriverWait(nav, 10).until(
-            EC.invisibility_of_element_located((By.ID, "j_id18"))
-        )
-    except:
-        pass
-
-    time.sleep(2)
-    pagina_antes = pagina_atual_numero(nav)
-    print(f"     Página atual antes do clique: {pagina_antes}")
-
-    botao_proximo = WebDriverWait(nav, 60).until(
-        EC.presence_of_element_located((By.XPATH, "//td[contains(@class, 'rich-datascr-button') and contains(., '»') and not(contains(., '»»'))]"))
-    )
-    if "rich-datascr-button-dsbld" in botao_proximo.get_attribute("class"):
-        raise Exception("Botão próximo está desabilitado.")
-
-    # Rola para o TOPO da página antes de clicar
-    nav.execute_script("window.scrollTo(0, 0);")
-    time.sleep(1)
-
-    # Clica via execute_script direto no botão
-    nav.execute_script("arguments[0].click();", botao_proximo)
-    time.sleep(3)
-
-    pagina_depois = pagina_atual_numero(nav)
-    print(f"     Página após o clique: {pagina_depois}")
-
-    # Espera chegar exatamente na página seguinte
-    pagina_esperada = pagina_antes + 1
-    WebDriverWait(nav, 120).until(
-        lambda d: pagina_atual_numero(d) == pagina_esperada
-    )
 
 
 def paginas_visiveis(nav):
@@ -258,7 +193,6 @@ def scraping_licitacao(nav, numero_processo, data_inicio):
     dados = []
     site = BeautifulSoup(nav.page_source, 'html.parser')
 
-    # Busca todos os tbodys — tanto o padrão com botão expandir quanto sem
     todos_tbodys = site.find_all("tbody", id=lambda x: x and (
         "itensGrupoListAction:tb" in x or
         "itemCoEPDataTable:tb" in x
@@ -294,7 +228,6 @@ def scraping_licitacao(nav, numero_processo, data_inicio):
 
 from datetime import datetime
 inicio = datetime.now()
-print(f"Início: {inicio.strftime('%d/%m/%Y %H:%M:%S')}")
 
 print("=== Configuração do intervalo de páginas ===")
 pagina_inicio = int(input("Página inicial: "))
@@ -325,8 +258,9 @@ dados_totais = []
 
 for pagina_atual in range(pagina_inicio, pagina_fim + 1):
     print(f"\n=== Processando página {pagina_atual}/{pagina_fim} ===")
-    dados_pagina = []  # acumula dados só da página atual
+    dados_pagina = []
     total_linhas = 0
+
     while True:
         nav_pagina = iniciar_navegador()
         try:
@@ -340,7 +274,7 @@ for pagina_atual in range(pagina_inicio, pagina_fim + 1):
             linhas = sorted(linhas, key=lambda el: el.location['y'])
             total_linhas = len(linhas)
             print(f"Licitações encontradas na página {pagina_atual}: {total_linhas}")
-            break  # conseguiu — sai do while
+            break
         except Exception as e:
             print(f"     Erro ao navegar para página {pagina_atual}, tentando novamente: {e}")
         finally:
@@ -349,30 +283,21 @@ for pagina_atual in range(pagina_inicio, pagina_fim + 1):
     for indice in range(total_linhas):
         print(f"  → Abrindo licitação {indice + 1}/{total_linhas} da página {pagina_atual}...")
 
-        modo_anonimo = True
-        usar_firefox = False
-
         while True:
-            nav_str = "Firefox" if usar_firefox else "Chrome"
-            modo_str = "anônimo" if modo_anonimo else "normal"
-            print(f"     Abrindo {nav_str} em modo {modo_str}...")
-            nav = iniciar_navegador(anonimo=modo_anonimo, firefox=usar_firefox)
+            nav = iniciar_navegador()
             aplicar_filtros(nav)
             dados = []
 
             try:
-                # Espera as linhas da tabela aparecerem antes de navegar
                 WebDriverWait(nav, 60).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, "tr.linhaImpar, tr.linhaPar"))
                 )
                 time.sleep(2)
                 navegar_para_pagina(nav, pagina_atual)
 
-                # Verifica debug após navegar
+                # Verifica se caiu na página de debug
                 if "debug.seam" in nav.current_url:
-                    usar_firefox = not usar_firefox
-                    modo_anonimo = not modo_anonimo
-                    print(f"     Debug detectado, alternando para {'Firefox' if usar_firefox else 'Chrome'} modo {'anônimo' if modo_anonimo else 'normal'}, aguardando 60s...")
+                    print("     Página de debug detectada, aguardando 60s...")
                     time.sleep(60)
                     raise Exception("Página de debug do servidor.")
 
@@ -391,9 +316,7 @@ for pagina_atual in range(pagina_inicio, pagina_fim + 1):
 
                 # Verifica debug após clicar na licitação
                 if "debug.seam" in nav.current_url:
-                    usar_firefox = not usar_firefox
-                    modo_anonimo = not modo_anonimo
-                    print(f"     Debug detectado, alternando para {'Firefox' if usar_firefox else 'Chrome'} modo {'anônimo' if modo_anonimo else 'normal'}, aguardando 60s...")
+                    print("     Página de debug detectada, aguardando 60s...")
                     time.sleep(60)
                     raise Exception("Página de debug do servidor.")
 
@@ -406,13 +329,11 @@ for pagina_atual in range(pagina_inicio, pagina_fim + 1):
 
                 # Verifica debug após visualizar proposta
                 if "debug.seam" in nav.current_url:
-                    usar_firefox = not usar_firefox
-                    modo_anonimo = not modo_anonimo
-                    print(f"     Debug detectado, alternando para {'Firefox' if usar_firefox else 'Chrome'} modo {'anônimo' if modo_anonimo else 'normal'}, aguardando 60s...")
+                    print("     Página de debug detectada, aguardando 60s...")
                     time.sleep(60)
                     raise Exception("Página de debug do servidor.")
 
-                # Tentar expandir itens (só existe quando os itens estão recolhidos)
+                # Tentar expandir itens
                 try:
                     ver_resultados = WebDriverWait(nav, 5).until(
                         EC.element_to_be_clickable((By.ID, "formularioDeCrud:grupoItensCoEPDataTable:0:j_id293"))
@@ -456,7 +377,7 @@ for pagina_atual in range(pagina_inicio, pagina_fim + 1):
                 nav.quit()
 
             if dados:
-                break  # conseguiu — sai do while
+                break
 
     # ─── EXPORTAR PÁGINA ATUAL ───────────────────────────────────────────────
     if dados_pagina:
