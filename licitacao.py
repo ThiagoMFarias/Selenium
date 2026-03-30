@@ -255,6 +255,7 @@ print(f"Intervalo válido! Rodando da página {pagina_inicio} até {pagina_fim}.
 # ─── LOOP PRINCIPAL ──────────────────────────────────────────────────────────
 
 dados_totais = []
+contador_licitacoes = 0  # contador global de licitações lidas
 
 for pagina_atual in range(pagina_inicio, pagina_fim + 1):
     print(f"\n=== Processando página {pagina_atual}/{pagina_fim} ===")
@@ -282,6 +283,10 @@ for pagina_atual in range(pagina_inicio, pagina_fim + 1):
 
     for indice in range(total_linhas):
         print(f"  → Abrindo licitação {indice + 1}/{total_linhas} da página {pagina_atual}...")
+
+        # Pequena pausa aleatória entre licitações para parecer mais humano
+        import random
+        time.sleep(random.uniform(1.5, 4.0))
 
         while True:
             nav = iniciar_navegador()
@@ -377,6 +382,16 @@ for pagina_atual in range(pagina_inicio, pagina_fim + 1):
                 nav.quit()
 
             if dados:
+                contador_licitacoes += 1
+                # Pausa aleatória a cada 6 licitações lidas
+                if contador_licitacoes % 6 == 0:
+                    import random
+                    pausa = random.randint(180, 300)
+                    minutos = pausa // 60
+                    segundos = pausa % 60
+                    print(f"\n  ⏸ Pausa de {minutos}min {segundos}s após {contador_licitacoes} licitações lidas...")
+                    time.sleep(pausa)
+                    print("  ▶ Retomando...\n")
                 break
 
     # ─── EXPORTAR PÁGINA ATUAL ───────────────────────────────────────────────
