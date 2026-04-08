@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Licitações — Acesso</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green:     #00ff88;
+    --green-dim: #00cc6a;
+    --green-glow:#00ff8844;
+    --dark:      #080e12;
+    --dark2:     #0d1a20;
+    --dark3:     #122230;
+    --border:    #1a3a4a;
+    --text:      #c8e6f0;
+    --text-dim:  #5a8a9a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--dark);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    overflow: hidden;
+  }
+
+  /* ── GRID DE FUNDO ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,255,136,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,136,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── PAINEL ESQUERDO ── */
+  .left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .left::after {
+    content: '';
+    position: absolute;
+    right: 0; top: 10%; bottom: 10%;
+    width: 1px;
+    background: linear-gradient(to bottom, transparent, var(--border), transparent);
+  }
+
+  .logo-area {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 60px;
+    animation: fadeUp 0.8s ease both;
+  }
+
+  .logo-icon {
+    width: 48px; height: 48px;
+    border: 2px solid var(--green);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 20px var(--green-glow);
+    position: relative;
+  }
+
+  .logo-icon::before {
+    content: '';
+    position: absolute; inset: 4px;
+    background: linear-gradient(135deg, var(--green), transparent);
+    border-radius: 6px;
+    opacity: 0.3;
+  }
+
+  .logo-icon svg { width: 24px; height: 24px; fill: var(--green); position: relative; }
+
+  .logo-text { font-family: 'Rajdhani', sans-serif; }
+  .logo-text .title { font-size: 20px; font-weight: 700; color: #fff; letter-spacing: 2px; }
+  .logo-text .sub   { font-size: 11px; color: var(--text-dim); letter-spacing: 3px; text-transform: uppercase; }
+
+  .hero-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 52px;
+    font-weight: 700;
+    line-height: 1.1;
+    color: #fff;
+    margin-bottom: 20px;
+    animation: fadeUp 0.8s 0.1s ease both;
+  }
+
+  .hero-title span {
+    color: var(--green);
+    text-shadow: 0 0 30px var(--green-glow);
+  }
+
+  .hero-desc {
+    font-size: 15px;
+    color: var(--text-dim);
+    line-height: 1.7;
+    max-width: 420px;
+    margin-bottom: 50px;
+    animation: fadeUp 0.8s 0.2s ease both;
+  }
+
+  /* ── STATS ── */
+  .stats {
+    display: flex;
+    gap: 32px;
+    animation: fadeUp 0.8s 0.3s ease both;
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    position: relative;
+    padding-left: 16px;
+  }
+
+  .stat::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 2px;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+  }
+
+  .stat .num {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .stat .lbl {
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* ── PAINEL DIREITO ── */
+  .right {
+    width: 480px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .login-card {
+    width: 100%;
+    background: var(--dark2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 48px 40px;
+    position: relative;
+    animation: fadeUp 0.8s 0.2s ease both;
+  }
+
+  .login-card::before {
+    content: '';
+    position: absolute;
+    top: -1px; left: 20%; right: 20%;
+    height: 2px;
+    background: linear-gradient(to right, transparent, var(--green), transparent);
+    border-radius: 2px;
+  }
+
+  .corner {
+    position: absolute;
+    width: 16px; height: 16px;
+    border-color: var(--green);
+    border-style: solid;
+    opacity: 0.6;
+  }
+  .corner.tl { top: 12px; left: 12px; border-width: 2px 0 0 2px; }
+  .corner.tr { top: 12px; right: 12px; border-width: 2px 2px 0 0; }
+  .corner.bl { bottom: 12px; left: 12px; border-width: 0 0 2px 2px; }
+  .corner.br { bottom: 12px; right: 12px; border-width: 0 2px 2px 0; }
+
+  .card-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+  }
+
+  .card-sub {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-bottom: 36px;
+  }
+
+  .field {
+    margin-bottom: 20px;
+  }
+
+  .field label {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+
+  .input-wrap {
+    position: relative;
+  }
+
+  .input-wrap svg {
+    position: absolute;
+    left: 14px; top: 50%;
+    transform: translateY(-50%);
+    width: 16px; height: 16px;
+    fill: var(--text-dim);
+    transition: fill 0.2s;
+  }
+
+  .field input {
+    width: 100%;
+    background: var(--dark3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 13px 14px 13px 42px;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .field input:focus {
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px var(--green-glow);
+  }
+
+  .field input:focus + svg,
+  .input-wrap:focus-within svg {
+    fill: var(--green);
+  }
+
+  .field input::placeholder { color: var(--text-dim); }
+
+  .forgot {
+    text-align: right;
+    margin-top: -10px;
+    margin-bottom: 24px;
+  }
+
+  .forgot a {
+    font-size: 12px;
+    color: var(--text-dim);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .forgot a:hover { color: var(--green); }
+
+  .btn-login {
+    width: 100%;
+    padding: 14px;
+    background: var(--green);
+    color: var(--dark);
+    border: none;
+    border-radius: 8px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.15s, box-shadow 0.2s;
+    box-shadow: 0 0 20px var(--green-glow);
+  }
+
+  .btn-login:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 30px rgba(0,255,136,0.4);
+  }
+
+  .btn-login:active { transform: translateY(0); }
+
+  .btn-login::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to right, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%);
+    transform: translateX(-100%);
+    transition: transform 0.4s;
+  }
+
+  .btn-login:hover::after { transform: translateX(100%); }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 24px 0;
+    color: var(--text-dim);
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .security-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: rgba(0,255,136,0.05);
+    border: 1px solid rgba(0,255,136,0.15);
+    border-radius: 8px;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .security-info svg {
+    width: 14px; height: 14px;
+    fill: var(--green);
+    flex-shrink: 0;
+  }
+
+  /* ── PULSE ANIMATION ── */
+  .pulse {
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0,255,136,0.08) 0%, transparent 70%);
+    animation: pulse 4s ease-in-out infinite;
+  }
+
+  /* ── SCAN LINE ── */
+  .scanline {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(to right, transparent, var(--green), transparent);
+    opacity: 0.3;
+    animation: scan 6s linear infinite;
+    z-index: 999;
+    pointer-events: none;
+  }
+
+  /* ── BOTTOM BAR ── */
+  .bottom-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    padding: 12px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(8,14,18,0.8);
+    border-top: 1px solid var(--border);
+    backdrop-filter: blur(10px);
+    z-index: 10;
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+  }
+
+  .status-dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+    margin-right: 6px;
+    animation: blink 2s ease-in-out infinite;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.5; }
+    50%       { transform: scale(1.2); opacity: 1; }
+  }
+
+  @keyframes scan {
+    from { top: -2px; }
+    to   { top: 100vh; }
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.3; }
+  }
+
+  /* ── ERROR MESSAGE ── */
+  .error-msg {
+    display: none;
+    color: #ff4466;
+    font-size: 12px;
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: rgba(255,68,102,0.08);
+    border: 1px solid rgba(255,68,102,0.2);
+    border-radius: 6px;
+  }
+</style>
+</head>
+<body>
+
+<div class="scanline"></div>
+
+<!-- PAINEL ESQUERDO -->
+<div class="left">
+  <div class="logo-area">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24"><path d="M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm13 0a4 4 0 100 8 4 4 0 000-8z"/></svg>
+    </div>
+    <div class="logo-text">
+      <div class="title">LICITAÇÕES</div>
+      <div class="sub">GC Empreendimentos</div>
+    </div>
+  </div>
+
+  <div class="hero-title">
+    Painel de<br>
+    <span>Inteligência</span><br>
+    em Licitações
+  </div>
+
+  <div class="hero-desc">
+    Plataforma centralizada para análise, monitoramento e gestão de processos licitatórios. Dados em tempo real com visualizações avançadas.
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <span class="num" id="cnt-processos">—</span>
+      <span class="lbl">Processos</span>
+    </div>
+    <div class="stat">
+      <span class="num" id="cnt-fornecedores">—</span>
+      <span class="lbl">Fornecedores</span>
+    </div>
+    <div class="stat">
+      <span class="num" id="cnt-itens">—</span>
+      <span class="lbl">Itens</span>
+    </div>
+  </div>
+</div>
+
+<!-- PAINEL DIREITO -->
+<div class="right">
+  <div class="login-card">
+    <div class="pulse"></div>
+    <div class="corner tl"></div>
+    <div class="corner tr"></div>
+    <div class="corner bl"></div>
+    <div class="corner br"></div>
+
+    <div class="card-title">ACESSO RESTRITO</div>
+    <div class="card-sub">Autentique-se para continuar</div>
+
+    <form onsubmit="handleLogin(event)">
+      <div class="field">
+        <label>Usuário</label>
+        <div class="input-wrap">
+          <input type="text" id="usuario" placeholder="seu.usuario" autocomplete="username" required>
+          <svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Senha</label>
+        <div class="input-wrap">
+          <input type="password" id="senha" placeholder="••••••••" autocomplete="current-password" required>
+          <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.8-2.2-5-5-5S7 3.2 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.7 1.4-3.1 3.1-3.1 1.7 0 3.1 1.4 3.1 3.1v2z"/></svg>
+        </div>
+      </div>
+
+      <div class="forgot"><a href="#">Esqueceu a senha?</a></div>
+
+      <button type="submit" class="btn-login">Entrar no Sistema</button>
+
+      <div class="error-msg" id="error-msg">
+        Usuário ou senha incorretos. Tente novamente.
+      </div>
+    </form>
+
+    <div class="divider">Acesso seguro</div>
+
+    <div class="security-info">
+      <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V5l-9-4zm-1 14l-3-3 1.4-1.4L11 12.2l4.6-4.6L17 9l-6 6z"/></svg>
+      Conexão criptografada — SSL/TLS ativo
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM BAR -->
+<div class="bottom-bar">
+  <div><span class="status-dot"></span>Sistema operacional</div>
+  <div>GC Empreendimentos © 2025 — Painel de Licitações</div>
+  <div id="relogio">--:--:--</div>
+</div>
+
+<script>
+// ── RELÓGIO ──────────────────────────────────────────────────────────────────
+function atualizarRelogio() {
+  const agora = new Date();
+  document.getElementById("relogio").textContent =
+    agora.toLocaleTimeString("pt-BR");
+}
+setInterval(atualizarRelogio, 1000);
+atualizarRelogio();
+
+// ── CONTADOR ANIMADO ─────────────────────────────────────────────────────────
+function animarContador(el, alvo, sufixo = "") {
+  let atual = 0;
+  const passo = Math.ceil(alvo / 40);
+  const timer = setInterval(() => {
+    atual = Math.min(atual + passo, alvo);
+    el.textContent = atual.toLocaleString("pt-BR") + sufixo;
+    if (atual >= alvo) clearInterval(timer);
+  }, 30);
+}
+
+setTimeout(() => {
+  animarContador(document.getElementById("cnt-processos"), 470);
+  animarContador(document.getElementById("cnt-fornecedores"), 74);
+  animarContador(document.getElementById("cnt-itens"), 5880);
+}, 600);
+
+// ── LOGIN ─────────────────────────────────────────────────────────────────────
+const USUARIOS = {
+  "admin":   "senha123",
+  "thiago":  "licitacao2025"
+};
+
+function handleLogin(e) {
+  e.preventDefault();
+  const usuario = document.getElementById("usuario").value.trim();
+  const senha   = document.getElementById("senha").value;
+  const erro    = document.getElementById("error-msg");
+
+  if (USUARIOS[usuario] && USUARIOS[usuario] === senha) {
+    document.querySelector(".btn-login").textContent = "AUTENTICANDO...";
+    setTimeout(() => {
+      window.location.href = "dashboard.html";
+    }, 1000);
+  } else {
+    erro.style.display = "block";
+    document.querySelector(".login-card").style.animation = "shake 0.3s ease";
+    setTimeout(() => erro.style.display = "none", 4000);
+  }
+}
+</script>
+</body>
+</html>
