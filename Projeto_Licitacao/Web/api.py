@@ -8,9 +8,6 @@ import os
 import hashlib
 import jwt
 import datetime
-from dotenv import load_dotenv
-
-load_dotenv()
 
 app = FastAPI(title="Licitações SEFAZ-CE API", version="1.0.0")
 
@@ -37,8 +34,9 @@ def get_conn():
         database=os.getenv("DB_NAME"),
         user=os.getenv("DB_USER"),
         password=os.getenv("DB_PASSWORD"),
-        port=os.getenv("DB_PORT", 5432),
+        port=os.getenv("DB_PORT", 6543),
         sslmode="require",
+        options="-c search_path=public",
         cursor_factory=psycopg2.extras.RealDictCursor
     )
 
