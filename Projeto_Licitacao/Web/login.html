@@ -16,7 +16,6 @@
     --border:    #1a3a4a;
     --text:      #c8e6f0;
     --text-dim:  #5a8a9a;
-    --red:       #c00;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -419,6 +418,57 @@
     50%       { opacity: 0.3; }
   }
 
+  /* ── RESPONSIVO — TABLET ── */
+  @media (max-width: 900px) {
+    .left {
+      padding: 40px;
+    }
+    .hero-title {
+      font-size: 36px;
+    }
+    .right {
+      width: 400px;
+      padding: 24px;
+    }
+    .login-card {
+      padding: 36px 28px;
+    }
+  }
+
+  /* ── RESPONSIVO — CELULAR ── */
+  @media (max-width: 640px) {
+    body {
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    /* esconde o painel esquerdo no celular */
+    .left {
+      display: none;
+    }
+
+    .right {
+      width: 100%;
+      min-height: 100vh;
+      padding: 24px 16px;
+      align-items: flex-start;
+      padding-top: 40px;
+    }
+
+    .login-card {
+      padding: 32px 24px;
+    }
+
+    .bottom-bar {
+      padding: 10px 16px;
+      font-size: 10px;
+    }
+
+    .bottom-bar > div:nth-child(2) {
+      display: none;
+    }
+  }
+
   /* ── ERROR MESSAGE ── */
   .error-msg {
     display: none;
@@ -444,7 +494,7 @@
     </div>
     <div class="logo-text">
       <div class="title">LICITAÇÕES</div>
-      <div class="sub">GC Empreendimentos</div>
+      <div class="sub">GC EMPREENDIMENTOS</div>
     </div>
   </div>
 
@@ -490,7 +540,7 @@
       <div class="field">
         <label>Usuário</label>
         <div class="input-wrap">
-          <input type="text" id="usuario" placeholder="seu.usuario" autocomplete="username" required>
+          <input type="text" id="usuario" placeholder="seu usuario" autocomplete="username" required>
           <svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
         </div>
       </div>
